@@ -1,0 +1,508 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
+const STORAGE_KEYS = {
+  user: 'fintwinai:user',
+  months: 'fintwinai:months',
+  chat: 'fintwinai:chat',
+};
+
+const defaultLogin = { name: '', email: '', password: '' };
+const defaultMonth = {
+  month: new Date().toISOString().slice(0, 7),
+  activeIncome: '',
+  passiveIncome: '',
+  creditScore: '',
+  loansOutstanding: '',
+  emiMonthly: '',
+  miscellaneousCharges: '',
+  moneySpent: '',
+};
+
+const defaultInsight = {
+  answer: 'Upload a month of data and ask a question about expenses, EMI, savings, or a big life decision.',
+  metric: 'expense',
+  title: 'Expense outlook',
+};
+
+const graphViews = [
+  { id: 'expense', label: 'Expenses', color: '#5f8f88' },
+  { id: 'income', label: 'Income', color: '#779eb2' },
+  { id: 'savings', label: 'Savings', color: '#a97c5e' },
+  { id: 'netWorth', label: 'Net Worth', color: '#7e8f62' },
+];
+
+const spanOptions = [6, 12, 24, 36];
+
+function getGraphView(metric) {
+  return graphViews.find((item) => item.id === metric) || graphViews[0];
+}
+
+function readJson(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJson(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function toNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function currency(value) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function average(values) {
+  if (!values.length) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function latestByMonth(months) {
+  return [...months].sort((a, b) => (a.month > b.month ? -1 : 1))[0] || null;
+}
+
+function buildProfile(months) {
+  if (!months.length) {
+    return {
+      monthsTracked: 0,
+      income: 0,
+      outflow: 0,
+      savings: 0,
+      creditScore: 0,
+      loanBalance: 0,
+      emi: 0,
+      spendingTrend: 0,
+    };
+  }
+
+  const ordered = [...months].sort((a, b) => (a.month < b.month ? -1 : 1));
+  const latest = ordered[ordered.length - 1];
+  const previous = ordered.length > 1 ? ordered[ordered.length - 2] : latest;
+
+  const income = toNumber(latest.activeIncome) + toNumber(latest.passiveIncome);
+  const outflow = toNumber(latest.moneySpent) + toNumber(latest.emiMonthly) + toNumber(latest.miscellaneousCharges);
+  const savings = income - outflow;
+  const spendingTrend = (toNumber(latest.moneySpent) - toNumber(previous.moneySpent)) / Math.max(1, toNumber(previous.moneySpent));
+
+  return {
+    monthsTracked: months.length,
+    income,
+    outflow,
+    savings,
+    creditScore: toNumber(latest.creditScore),
+    loanBalance: toNumber(latest.loansOutstanding),
+    emi: toNumber(latest.emiMonthly),
+    avgIncome: average(months.map((item) => toNumber(item.activeIncome) + toNumber(item.passiveIncome))),
+    avgOutflow: average(months.map((item) => toNumber(item.moneySpent) + toNumber(item.emiMonthly) + toNumber(item.miscellaneousCharges))),
+    avgSpent: average(months.map((item) => toNumber(item.moneySpent))),
+    avgMisc: average(months.map((item) => toNumber(item.miscellaneousCharges))),
+    avgEmi: average(months.map((item) => toNumber(item.emiMonthly))),
+    spendingTrend,
+  };
+}
+
+function buildForecast(profile, months, span) {
+  const baseIncome = profile.income || profile.avgIncome || 0;
+  const baseExpense = profile.outflow || profile.avgOutflow || 0;
+  const monthlyInflation = 0.065 / 12;
+  const behaviorDrift = months.length > 1 ? Math.min(0.02, Math.max(-0.01, profile.spendingTrend / 3)) : 0.005;
+  const incomeGrowth = 0.025 / 12;
+  let runningNetWorth = Math.max(0, profile.savings) - profile.loanBalance;
+
+  return Array.from({ length: span }, (_, index) => {
+    const monthIndex = index + 1;
+    const income = baseIncome * Math.pow(1 + incomeGrowth, monthIndex);
+    const expense = baseExpense * Math.pow(1 + monthlyInflation + behaviorDrift, monthIndex);
+    const savings = income - expense;
+    runningNetWorth += savings;
+
+    return {
+      month: `M${monthIndex}`,
+      income: Math.round(income),
+      expense: Math.round(expense),
+      savings: Math.round(savings),
+      netWorth: Math.round(runningNetWorth),
+    };
+  });
+}
+
+function buildInsight(question, profile, forecast) {
+  const text = question.toLowerCase();
+  const next = forecast[0] || { income: 0, expense: 0, savings: 0, netWorth: 0 };
+  const later = forecast[Math.min(forecast.length - 1, 11)] || next;
+  const debtRatio = profile.income ? profile.emi / profile.income : 0;
+
+  if (text.includes('expense') || text.includes('spend') || text.includes('inflation')) {
+    return {
+      metric: 'expense',
+      title: 'Expense outlook',
+      answer: `Your expenses are projected around ${currency(next.expense)} next month and around ${currency(later.expense)} by the later part of the forecast. Inflation plus your recent spending pattern is pushing this line upward.`,
+    };
+  }
+
+  if (text.includes('income') || text.includes('salary') || text.includes('earn')) {
+    return {
+      metric: 'income',
+      title: 'Income outlook',
+      answer: `Your income line is projected near ${currency(next.income)} next month. If current earnings stay steady, the model expects gradual growth, but it still needs to outpace expenses to create breathing room.`,
+    };
+  }
+
+  if (text.includes('save') || text.includes('surplus') || text.includes('cash')) {
+    return {
+      metric: 'savings',
+      title: 'Savings outlook',
+      answer: `Your projected monthly savings is about ${currency(next.savings)} next month. That line matters most for future flexibility, because it shows whether your income is comfortably clearing expenses and EMI.`,
+    };
+  }
+
+  if (text.includes('loan') || text.includes('emi') || text.includes('debt')) {
+    return {
+      metric: 'netWorth',
+      title: 'Debt and net worth outlook',
+      answer: `Your EMI currently takes about ${Math.round(debtRatio * 100)}% of monthly income. If that stays high, net worth improves more slowly because recurring debt service keeps eating into the surplus.`,
+    };
+  }
+
+  if (text.includes('house') || text.includes('mba') || text.includes('car') || text.includes('vehicle') || text.includes('goal')) {
+    return {
+      metric: 'savings',
+      title: 'Decision impact outlook',
+      answer: `For a major decision, the savings line is the first thing to watch. If it stays positive across the full selected tenure, the decision is more manageable. If it turns negative early, the plan needs adjustment.`,
+    };
+  }
+
+  return {
+    metric: 'expense',
+    title: 'General outlook',
+    answer: `Based on your uploaded data, the model sees income around ${currency(next.income)}, expenses around ${currency(next.expense)}, and savings around ${currency(next.savings)} next month. Ask about a specific topic and I will focus the graph on it.`,
+  };
+}
+
+function formatMonthLabel(monthValue) {
+  if (!monthValue) return 'Unknown month';
+  const [year, month] = monthValue.split('-').map(Number);
+  return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1));
+}
+
+export default function App() {
+  const [user, setUser] = useState(() => readJson(STORAGE_KEYS.user, null));
+  const [months, setMonths] = useState(() => readJson(STORAGE_KEYS.months, []));
+  const [chat, setChat] = useState(() => readJson(STORAGE_KEYS.chat, []));
+  const [login, setLogin] = useState(defaultLogin);
+  const [monthForm, setMonthForm] = useState(defaultMonth);
+  const [question, setQuestion] = useState('');
+  const [graphMetric, setGraphMetric] = useState('expense');
+  const [graphSpan, setGraphSpan] = useState(12);
+  const [latestInsight, setLatestInsight] = useState(defaultInsight);
+
+  useEffect(() => writeJson(STORAGE_KEYS.user, user), [user]);
+  useEffect(() => writeJson(STORAGE_KEYS.months, months), [months]);
+  useEffect(() => writeJson(STORAGE_KEYS.chat, chat), [chat]);
+
+  const profile = useMemo(() => buildProfile(months), [months]);
+  const forecast = useMemo(() => buildForecast(profile, months, graphSpan), [profile, months, graphSpan]);
+  const currentMonth = latestByMonth(months);
+  const summaryCards = useMemo(() => {
+    const first = forecast[0] || { expense: 0, income: 0, savings: 0, netWorth: 0 };
+    const last = forecast[forecast.length - 1] || first;
+    return [
+      { id: 'expense', label: 'Projected expenses', value: currency(last.expense), sub: `Starts near ${currency(first.expense)}` },
+      { id: 'income', label: 'Projected income', value: currency(last.income), sub: `Starts near ${currency(first.income)}` },
+      { id: 'savings', label: 'Projected savings', value: currency(last.savings), sub: `Starts near ${currency(first.savings)}` },
+      { id: 'netWorth', label: 'Projected net worth', value: currency(last.netWorth), sub: `Starts near ${currency(first.netWorth)}` },
+    ];
+  }, [forecast]);
+
+  const handleLogin = (event) => {
+    event.preventDefault();
+    setUser({
+      name: login.name || 'User',
+      email: login.email,
+    });
+  };
+
+  const handleMonthSave = (event) => {
+    event.preventDefault();
+    const entry = {
+      ...monthForm,
+      id: `${monthForm.month}-${Date.now()}`,
+    };
+    setMonths((current) => {
+      const next = [entry, ...current.filter((item) => item.month !== entry.month)];
+      return next.sort((a, b) => (a.month < b.month ? 1 : -1));
+    });
+    setMonthForm(defaultMonth);
+  };
+
+  const handleQuestionSend = (event) => {
+    event.preventDefault();
+    const text = question.trim();
+    if (!text) return;
+
+    const insight = buildInsight(text, profile, buildForecast(profile, months, graphSpan));
+    setLatestInsight(insight);
+    setGraphMetric(insight.metric);
+    setChat((current) => [
+      ...current,
+      { role: 'user', text },
+      { role: 'assistant', text: insight.answer, metric: insight.metric, title: insight.title },
+    ]);
+    setQuestion('');
+  };
+
+  if (!user) {
+    return (
+      <div className="app-shell auth-shell">
+        <section className="auth-panel">
+          <div className="auth-copy">
+            <div className="eyebrow">FinTwinAI</div>
+            <h1>Upload monthly expenses and ask what happens next.</h1>
+            <p>
+              Sign in, track your monthly finances, and use the chat to see how your questions change the forecast.
+            </p>
+          </div>
+          <form className="form-card" onSubmit={handleLogin}>
+            <label>
+              Name
+              <input
+                type="text"
+                value={login.name}
+                onChange={(event) => setLogin((current) => ({ ...current, name: event.target.value }))}
+                placeholder="Your name"
+                required
+              />
+            </label>
+            <label>
+              Email
+              <input
+                type="email"
+                value={login.email}
+                onChange={(event) => setLogin((current) => ({ ...current, email: event.target.value }))}
+                placeholder="you@example.com"
+                required
+              />
+            </label>
+            <label>
+              Password
+              <input
+                type="password"
+                value={login.password}
+                onChange={(event) => setLogin((current) => ({ ...current, password: event.target.value }))}
+                placeholder="Create a password"
+                required
+              />
+            </label>
+            <button className="primary-button wide" type="submit">Enter</button>
+          </form>
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <div>
+          <div className="eyebrow">FinTwinAI</div>
+          <h1>{user.name}'s Financial Workspace</h1>
+          <p className="subtitle">Upload the month, ask the question, inspect the graph.</p>
+        </div>
+        <button className="secondary-button" type="button" onClick={() => setUser(null)}>Log out</button>
+      </header>
+
+      <main className="workspace compact-workspace">
+        <section className="panel form-panel">
+          <div className="section-title">
+            <h2>Monthly Upload</h2>
+            <span>{months.length} month{months.length === 1 ? '' : 's'} stored</span>
+          </div>
+          <form className="month-grid" onSubmit={handleMonthSave}>
+            <label>
+              Month
+              <input type="month" value={monthForm.month} onChange={(event) => setMonthForm((current) => ({ ...current, month: event.target.value }))} required />
+            </label>
+            <label>
+              Active earnings
+              <input type="number" min="0" value={monthForm.activeIncome} onChange={(event) => setMonthForm((current) => ({ ...current, activeIncome: event.target.value }))} required />
+            </label>
+            <label>
+              Passive earnings
+              <input type="number" min="0" value={monthForm.passiveIncome} onChange={(event) => setMonthForm((current) => ({ ...current, passiveIncome: event.target.value }))} required />
+            </label>
+            <label>
+              Credit score
+              <input type="number" min="300" max="900" value={monthForm.creditScore} onChange={(event) => setMonthForm((current) => ({ ...current, creditScore: event.target.value }))} required />
+            </label>
+            <label>
+              Loans outstanding
+              <input type="number" min="0" value={monthForm.loansOutstanding} onChange={(event) => setMonthForm((current) => ({ ...current, loansOutstanding: event.target.value }))} required />
+            </label>
+            <label>
+              EMI paid monthly
+              <input type="number" min="0" value={monthForm.emiMonthly} onChange={(event) => setMonthForm((current) => ({ ...current, emiMonthly: event.target.value }))} required />
+            </label>
+            <label>
+              Miscellaneous charges
+              <input type="number" min="0" value={monthForm.miscellaneousCharges} onChange={(event) => setMonthForm((current) => ({ ...current, miscellaneousCharges: event.target.value }))} required />
+            </label>
+            <label>
+              Money spent
+              <input type="number" min="0" value={monthForm.moneySpent} onChange={(event) => setMonthForm((current) => ({ ...current, moneySpent: event.target.value }))} required />
+            </label>
+            <div className="form-actions">
+              <button className="primary-button" type="submit">Save month</button>
+              <span>{currentMonth ? `Latest upload: ${formatMonthLabel(currentMonth.month)}` : 'No uploads yet'}</span>
+            </div>
+          </form>
+        </section>
+
+        <section className="panel outputs-panel">
+          <div className="section-title">
+            <h2>Forecast Outputs</h2>
+            <span>Click any output to change the graph</span>
+          </div>
+          <div className="output-grid">
+            {summaryCards.map((card) => (
+              <button
+                key={card.id}
+                type="button"
+                className={card.id === graphMetric ? 'output-card active' : 'output-card'}
+                onClick={() => setGraphMetric(card.id)}
+              >
+                <span>{card.label}</span>
+                <strong>{card.value}</strong>
+                <small>{card.sub}</small>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="panel chart-panel">
+          <div className="section-title">
+            <h2>{graphViews.find((item) => item.id === graphMetric)?.label} Graph</h2>
+            <div className="segmented">
+              {spanOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={graphSpan === option ? 'segment active' : 'segment'}
+                  onClick={() => setGraphSpan(option)}
+                >
+                  {option}M
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="chart-wrap">
+            <ResponsiveContainer width="100%" height={360}>
+              <LineChart data={forecast}>
+                <CartesianGrid stroke="#dbe5e1" strokeDasharray="3 3" />
+                <XAxis dataKey="month" stroke="#617570" />
+                <YAxis stroke="#617570" />
+                <Tooltip formatter={(value) => currency(value)} />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey={graphMetric}
+                  name={graphViews.find((item) => item.id === graphMetric)?.label || graphMetric}
+                  stroke={graphViews.find((item) => item.id === graphMetric)?.color || '#5f8f88'}
+                  strokeWidth={3}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
+        <section className="panel chat-panel">
+          <div className="section-title">
+            <h2>Ask the Model</h2>
+            <span>{latestInsight.title}</span>
+          </div>
+          <div className="chat-thread">
+            {chat.length === 0 ? (
+              <div className="empty-chat">{defaultInsight.answer}</div>
+            ) : (
+              chat.map((message, index) => {
+                const messageGraph = message.metric ? getGraphView(message.metric) : null;
+
+                return (
+                  <React.Fragment key={`${message.role}-${index}`}>
+                    <button
+                      type="button"
+                      className={`chat-bubble ${message.role}`}
+                      onClick={() => message.metric && setGraphMetric(message.metric)}
+                    >
+                      {message.text}
+                    </button>
+                    {messageGraph && (
+                      <div className="chat-result-graph">
+                        <div className="chat-result-title">
+                          <strong>{message.title || `${messageGraph.label} Prediction`}</strong>
+                          <span>{graphSpan} month forecast</span>
+                        </div>
+                        <div className="chat-chart-wrap">
+                          <ResponsiveContainer width="100%" height={190}>
+                            <LineChart data={forecast}>
+                              <CartesianGrid stroke="#dbe5e1" strokeDasharray="3 3" />
+                              <XAxis dataKey="month" stroke="#617570" />
+                              <YAxis stroke="#617570" width={72} tickFormatter={(value) => currency(value)} />
+                              <Tooltip formatter={(value) => currency(value)} />
+                              <Line
+                                type="monotone"
+                                dataKey={message.metric}
+                                name={messageGraph.label}
+                                stroke={messageGraph.color}
+                                strokeWidth={3}
+                                dot={false}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })
+            )}
+          </div>
+          <form className="chat-form" onSubmit={handleQuestionSend}>
+            <input
+              type="text"
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              placeholder="What happens to my expenses in 24 months? Can I handle a house loan? What about EMI pressure?"
+            />
+            <button className="primary-button" type="submit">Send</button>
+          </form>
+          <div className="insight-strip">
+            <strong>{latestInsight.title}</strong>
+            <span>{latestInsight.answer}</span>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
