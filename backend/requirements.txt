@@ -8,3 +8,10 @@ accelerate==1.2.1
 peft==0.14.0
 scikit-learn==1.5.2
 joblib==1.4.2
+sqlalchemy==2.0.35
+asyncpg==0.29.0
+alembic==1.13.3
+groq==0.13.0
+bcrypt==4.2.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4

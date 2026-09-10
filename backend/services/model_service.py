@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Optional
 
 from config import settings
+from services.groq_service import groq_service
 
 try:
     from transformers import pipeline
-except Exception:  # pragma: no cover - optional at runtime
+except Exception:
     pipeline = None
 
 
@@ -27,6 +29,23 @@ class PersonalizedFinanceModelService:
         fallback_answer: str,
         agent_outputs: list[dict],
     ) -> dict:
+        # Try Groq first if API key is available
+        if settings.groq_api_key:
+            import asyncio
+            try:
+                groq_answer = asyncio.run(groq_service.answer_financial_question(
+                    question, profile, forecast, agent_outputs, explanation
+                ))
+                if groq_answer:
+                    return {
+                        "answer": groq_answer,
+                        "answer_source": "groq_llm",
+                        "model_name": "llama-3.3-70b-versatile",
+                    }
+            except Exception as e:
+                print(f"Groq service error: {e}")
+
+        # Fall back to local model
         prompt = self._build_prompt(question, profile, forecast, explanation, agent_outputs)
         generator = self._get_generator()
 

@@ -1,6 +1,11 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from database import init_db, close_db
+from auth.routes import router as auth_router
+from api.financial import router as financial_router
+from api.chat import router as chat_router
 from agents.goal_agent import GoalAgent
 from agents.investment_agent import InvestmentAgent
 from agents.risk_agent import RiskAgent
@@ -13,7 +18,15 @@ from services.model_service import PersonalizedFinanceModelService
 from training.dataset_registry import dataset_summary
 from training.personalize_from_profile import export_personalization_data
 
-app = FastAPI(title="FinTwinAI Backend", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+    await close_db()
+
+
+app = FastAPI(title="FinTwinAI Backend", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,6 +35,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(auth_router)
+app.include_router(financial_router)
+app.include_router(chat_router)
 
 twin_engine = FinancialDigitalTwinEngine()
 forecasting_engine = ForecastingScenarioEngine()

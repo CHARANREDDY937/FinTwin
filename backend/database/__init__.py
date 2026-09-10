@@ -1,0 +1,41 @@
+from database.connection import init_db, close_db, get_db, get_db_session, engine, AsyncSessionLocal
+from database.models import User, FinancialMonth, ChatMessage, Base
+from database.crud import (
+    create_user,
+    get_user_by_email,
+    get_user_by_id,
+    authenticate_user,
+    add_financial_month,
+    get_financial_months,
+    delete_financial_month,
+    save_chat_message,
+    get_chat_history,
+    clear_chat_history,
+    hash_password,
+    verify_password,
+)
+
+__all__ = [
+    "init_db",
+    "close_db",
+    "get_db",
+    "get_db_session",
+    "engine",
+    "AsyncSessionLocal",
+    "User",
+    "FinancialMonth",
+    "ChatMessage",
+    "Base",
+    "create_user",
+    "get_user_by_email",
+    "get_user_by_id",
+    "authenticate_user",
+    "add_financial_month",
+    "get_financial_months",
+    "delete_financial_month",
+    "save_chat_message",
+    "get_chat_history",
+    "clear_chat_history",
+    "hash_password",
+    "verify_password",
+]
