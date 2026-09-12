@@ -103,7 +103,7 @@ def chat_with_twin(request: ChatRequest):
         months=request.months,
         model=request.model,
         scenario=request.scenario,
-        horizon=12,
+        horizon=request.horizon,
     )
     explanation = explainability_engine.explain(profile)
     fallback_answer = twin_engine.answer_question(

@@ -9,11 +9,13 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { askChat, registerUser, loginUser } from './api';
 
 const STORAGE_KEYS = {
   user: 'fintwinai:user',
   months: 'fintwinai:months',
   chat: 'fintwinai:chat',
+  theme: 'fintwinai:theme',
 };
 
 const defaultLogin = { name: '', email: '', password: '' };
@@ -66,9 +68,9 @@ function toNumber(value) {
 }
 
 function currency(value) {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'INR',
     maximumFractionDigits: 0,
   }).format(value);
 }
@@ -210,16 +212,29 @@ export default function App() {
   const [user, setUser] = useState(() => readJson(STORAGE_KEYS.user, null));
   const [months, setMonths] = useState(() => readJson(STORAGE_KEYS.months, []));
   const [chat, setChat] = useState(() => readJson(STORAGE_KEYS.chat, []));
+  const [theme, setTheme] = useState(() => readJson(STORAGE_KEYS.theme, 'light'));
   const [login, setLogin] = useState(defaultLogin);
+  const [authMode, setAuthMode] = useState('login');
+  const [authError, setAuthError] = useState('');
   const [monthForm, setMonthForm] = useState(defaultMonth);
   const [question, setQuestion] = useState('');
   const [graphMetric, setGraphMetric] = useState('expense');
   const [graphSpan, setGraphSpan] = useState(12);
   const [latestInsight, setLatestInsight] = useState(defaultInsight);
+  const [modelAnswer, setModelAnswer] = useState(null);
+  const [backendOnline, setBackendOnline] = useState(null);
 
   useEffect(() => writeJson(STORAGE_KEYS.user, user), [user]);
   useEffect(() => writeJson(STORAGE_KEYS.months, months), [months]);
   useEffect(() => writeJson(STORAGE_KEYS.chat, chat), [chat]);
+  useEffect(() => {
+    writeJson(STORAGE_KEYS.theme, theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((current) => (current === 'light' ? 'dark' : 'light'));
+  };
 
   const profile = useMemo(() => buildProfile(months), [months]);
   const forecast = useMemo(() => buildForecast(profile, months, graphSpan), [profile, months, graphSpan]);
@@ -235,14 +250,6 @@ export default function App() {
     ];
   }, [forecast]);
 
-  const handleLogin = (event) => {
-    event.preventDefault();
-    setUser({
-      name: login.name || 'User',
-      email: login.email,
-    });
-  };
-
   const handleMonthSave = (event) => {
     event.preventDefault();
     const entry = {
@@ -256,44 +263,106 @@ export default function App() {
     setMonthForm(defaultMonth);
   };
 
-  const handleQuestionSend = (event) => {
+  const handleQuestionSend = async (event) => {
     event.preventDefault();
     const text = question.trim();
     if (!text) return;
 
-    const insight = buildInsight(text, profile, buildForecast(profile, months, graphSpan));
-    setLatestInsight(insight);
-    setGraphMetric(insight.metric);
+    const localInsight = buildInsight(text, profile, buildForecast(profile, months, graphSpan));
+    setLatestInsight(localInsight);
     setChat((current) => [
       ...current,
       { role: 'user', text },
-      { role: 'assistant', text: insight.answer, metric: insight.metric, title: insight.title },
     ]);
     setQuestion('');
+
+    // Try the backend model first; it returns a richer text answer.
+    let answer = localInsight.answer;
+    let metric = localInsight.metric;
+    let title = localInsight.title;
+    let source = 'local';
+
+    try {
+      const result = await askChat(text, months, graphSpan);
+      setBackendOnline(true);
+      if (result && result.answer) {
+        answer = result.answer;
+        title = `Model answer (${result.answer_source || 'model'})`;
+        source = result.answer_source || 'model';
+      }
+    } catch {
+      setBackendOnline(false);
+    }
+
+    setModelAnswer({ text: answer, title, source });
+    if (metric) setGraphMetric(metric);
+    setChat((current) => [
+      ...current,
+      { role: 'assistant', text: answer, metric, title },
+    ]);
   };
 
   if (!user) {
+    const isLogin = authMode === 'login';
+    const handleSubmit = async (event) => {
+      event.preventDefault();
+      setAuthError('');
+      try {
+        if (isLogin) {
+          const data = await loginUser(login.email, login.password);
+          localStorage.setItem('fintwinai:token', data.access_token);
+          setUser({ name: login.email.split('@')[0], email: login.email });
+        } else {
+          const data = await registerUser(login.email, login.name, login.password);
+          localStorage.setItem('fintwinai:token', data.access_token);
+          setUser({ name: login.name, email: login.email });
+        }
+      } catch (error) {
+        setAuthError(error.message || 'Authentication failed');
+      }
+    };
+
     return (
       <div className="app-shell auth-shell">
         <section className="auth-panel">
           <div className="auth-copy">
             <div className="eyebrow">FinTwinAI</div>
-            <h1>Upload monthly expenses and ask what happens next.</h1>
+            <h1>{isLogin ? 'Welcome back' : 'Create your account'}</h1>
             <p>
-              Sign in, track your monthly finances, and use the chat to see how your questions change the forecast.
+              {isLogin
+                ? 'Sign in to your financial workspace and continue tracking your months.'
+                : 'Register to start uploading monthly finances and asking the model.'}
             </p>
+            <div className="auth-toggle">
+              <button
+                type="button"
+                className={isLogin ? 'toggle active' : 'toggle'}
+                onClick={() => { setAuthMode('login'); setAuthError(''); }}
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                className={isLogin ? 'toggle' : 'toggle active'}
+                onClick={() => { setAuthMode('register'); setAuthError(''); }}
+              >
+                Register
+              </button>
+            </div>
           </div>
-          <form className="form-card" onSubmit={handleLogin}>
-            <label>
-              Name
-              <input
-                type="text"
-                value={login.name}
-                onChange={(event) => setLogin((current) => ({ ...current, name: event.target.value }))}
-                placeholder="Your name"
-                required
-              />
-            </label>
+          <form className="form-card" onSubmit={handleSubmit}>
+            {!isLogin && (
+              <label>
+                Name
+                <input
+                  type="text"
+                  value={login.name || ''}
+                  onChange={(event) => setLogin((current) => ({ ...current, name: event.target.value }))}
+                  placeholder="Your name"
+                  required
+                />
+              </label>
+            )}
             <label>
               Email
               <input
@@ -310,11 +379,14 @@ export default function App() {
                 type="password"
                 value={login.password}
                 onChange={(event) => setLogin((current) => ({ ...current, password: event.target.value }))}
-                placeholder="Create a password"
+                placeholder={isLogin ? 'Your password' : 'Create a password'}
                 required
               />
             </label>
-            <button className="primary-button wide" type="submit">Enter</button>
+            {authError && <div className="auth-error">{authError}</div>}
+            <button className="primary-button wide" type="submit">
+              {isLogin ? 'Sign In' : 'Create Account'}
+            </button>
           </form>
         </section>
       </div>
@@ -329,7 +401,17 @@ export default function App() {
           <h1>{user.name}'s Financial Workspace</h1>
           <p className="subtitle">Upload the month, ask the question, inspect the graph.</p>
         </div>
-        <button className="secondary-button" type="button" onClick={() => setUser(null)}>Log out</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={toggleTheme}
+            aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
+          >
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+          <button className="secondary-button" type="button" onClick={() => setUser(null)}>Log out</button>
+        </div>
       </header>
 
       <main className="workspace compact-workspace">
@@ -439,7 +521,9 @@ export default function App() {
         <section className="panel chat-panel">
           <div className="section-title">
             <h2>Ask the Model</h2>
-            <span>{latestInsight.title}</span>
+            <span className={backendOnline === false ? 'offline' : ''}>
+              {backendOnline === false ? 'Backend offline - using local model' : (backendOnline ? 'Backend connected' : 'Model ready')}
+            </span>
           </div>
           <div className="chat-thread">
             {chat.length === 0 ? (
@@ -457,7 +541,7 @@ export default function App() {
                     >
                       {message.text}
                     </button>
-                    {messageGraph && (
+                    {message.role === 'assistant' && messageGraph && (
                       <div className="chat-result-graph">
                         <div className="chat-result-title">
                           <strong>{message.title || `${messageGraph.label} Prediction`}</strong>
@@ -497,6 +581,15 @@ export default function App() {
             />
             <button className="primary-button" type="submit">Send</button>
           </form>
+          {modelAnswer && (
+            <div className="model-answer-panel">
+              <div className="model-answer-title">
+                <strong>{modelAnswer.title}</strong>
+                <span className="model-answer-source">{modelAnswer.source}</span>
+              </div>
+              <p className="model-answer-text">{modelAnswer.text}</p>
+            </div>
+          )}
           <div className="insight-strip">
             <strong>{latestInsight.title}</strong>
             <span>{latestInsight.answer}</span>

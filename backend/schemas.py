@@ -36,6 +36,7 @@ class ChatRequest(BaseModel):
     months: List[FinancialMonth]
     model: str = "xgboost"
     scenario: str = "baseline"
+    horizon: int = Field(default=12, ge=1, le=120)
 
 
 class PersonalizedTrainingRequest(BaseModel):

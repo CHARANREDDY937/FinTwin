@@ -53,7 +53,7 @@ class FinancialDigitalTwinEngine:
 
         if "inflation" in question_text or "expense" in question_text:
             return (
-                f"Your next-month expense forecast is {next_month['expense']:.0f}. "
+                f"Your next-month expense forecast is ₹{next_month['expense']:.0f}. "
                 f"The strongest driver is {top_driver}, so controlling that factor will improve the forecast fastest."
             )
         if "loan" in question_text or "emi" in question_text or "debt" in question_text:
@@ -68,12 +68,12 @@ class FinancialDigitalTwinEngine:
             )
         if "goal" in question_text or "house" in question_text or "mba" in question_text:
             return (
-                f"Your projected monthly savings is {next_month['savings']:.0f}. "
+                f"Your projected monthly savings is ₹{next_month['savings']:.0f}. "
                 "Large goals are safer when this value stays positive after EMI and essentials."
             )
 
         return (
             f"I see {profile['months_tracked']} uploaded month(s). "
-            f"Your monthly income is {profile['monthly_income']:.0f}, outflow is {profile['monthly_outflow']:.0f}, "
+            f"Your monthly income is ₹{profile['monthly_income']:.0f}, outflow is ₹{profile['monthly_outflow']:.0f}, "
             f"and the top forecast driver is {top_driver}."
         )

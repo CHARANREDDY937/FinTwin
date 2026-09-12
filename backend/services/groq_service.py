@@ -60,21 +60,21 @@ class GroqService:
         system_prompt = """You are FinTwinAI, a personalized financial digital twin assistant.
 Provide concise, specific financial guidance based on the user's actual data.
 Use concrete numbers from their profile and forecast. Be practical and actionable.
-Keep responses under 3-4 sentences."""
+Keep responses under 3-4 sentences. All monetary values are in Indian rupees (₹)."""
 
-        user_prompt = f"""User financial profile:
-- Monthly income: ${profile.get('monthly_income', 0):,.2f}
-- Monthly outflow: ${profile.get('monthly_outflow', 0):,.2f}
-- Monthly surplus: ${profile.get('monthly_surplus', 0):,.2f}
+        user_prompt = f"""User financial profile (amounts in Indian rupees, ₹):
+- Monthly income: ₹{profile.get('monthly_income', 0):,.2f}
+- Monthly outflow: ₹{profile.get('monthly_outflow', 0):,.2f}
+- Monthly surplus: ₹{profile.get('monthly_surplus', 0):,.2f}
 - Savings rate: {profile.get('savings_rate', 0):.2%}
 - Debt service ratio: {profile.get('debt_service_ratio', 0):.2%}
 - Credit score: {profile.get('credit_score', 0):.0f}
-- Loan balance: ${profile.get('loan_balance', 0):,.2f}
+- Loan balance: ₹{profile.get('loan_balance', 0):,.2f}
 
 Forecast snapshot (next month):
-- Income: ${next_month.get('income', 0):,.2f}
-- Expense: ${next_month.get('expense', 0):,.2f}
-- Savings: ${next_month.get('savings', 0):,.2f}
+- Income: ₹{next_month.get('income', 0):,.2f}
+- Expense: ₹{next_month.get('expense', 0):,.2f}
+- Savings: ₹{next_month.get('savings', 0):,.2f}
 
 Explainability - Top features: {top_features}
 
