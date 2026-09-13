@@ -37,13 +37,35 @@ const defaultInsight = {
 };
 
 const graphViews = [
-  { id: 'expense', label: 'Expenses', color: '#5f8f88' },
-  { id: 'income', label: 'Income', color: '#779eb2' },
-  { id: 'savings', label: 'Savings', color: '#a97c5e' },
-  { id: 'netWorth', label: 'Net Worth', color: '#7e8f62' },
+  { id: 'expense', label: 'Expenses', color: '#5f8f88', icon: '💸' },
+  { id: 'income', label: 'Income', color: '#779eb2', icon: '💰' },
+  { id: 'savings', label: 'Savings', color: '#a97c5e', icon: '🏦' },
+  { id: 'netWorth', label: 'Net Worth', color: '#7e8f62', icon: '💎' },
 ];
 
 const spanOptions = [6, 12, 24, 36];
+
+const demoMonths = [
+  { month: '2024-01', activeIncome: 95000, passiveIncome: 12000, creditScore: 760, loansOutstanding: 1800000, emiMonthly: 28000, miscellaneousCharges: 5000, moneySpent: 32000 },
+  { month: '2024-02', activeIncome: 95000, passiveIncome: 12000, creditScore: 762, loansOutstanding: 1750000, emiMonthly: 28000, miscellaneousCharges: 4500, moneySpent: 34000 },
+  { month: '2024-03', activeIncome: 95000, passiveIncome: 12000, creditScore: 765, loansOutstanding: 1700000, emiMonthly: 28000, miscellaneousCharges: 6200, moneySpent: 31000 },
+  { month: '2024-04', activeIncome: 98000, passiveIncome: 12000, creditScore: 768, loansOutstanding: 1650000, emiMonthly: 28000, miscellaneousCharges: 5800, moneySpent: 36000 },
+  { month: '2024-05', activeIncome: 98000, passiveIncome: 12000, creditScore: 770, loansOutstanding: 1600000, emiMonthly: 28000, miscellaneousCharges: 5500, moneySpent: 33000 },
+  { month: '2024-06', activeIncome: 100000, passiveIncome: 15000, creditScore: 775, loansOutstanding: 1550000, emiMonthly: 28000, miscellaneousCharges: 7000, moneySpent: 35000 },
+];
+
+const taglineLines = [
+  'Your AI-powered financial twin — predict, plan, and decide with confidence.',
+  'Forecast your future finances and simulate life-changing scenarios.',
+  'Multi-agent AI that understands spending, investing, risk, and goals.',
+];
+
+const suggestedQuestions = [
+  'Can I afford a house in 24 months?',
+  'What happens to my savings if inflation jumps 8%?',
+  'Should I take on a car loan right now?',
+  'How much should I be saving each month?',
+];
 
 function getGraphView(metric) {
   return graphViews.find((item) => item.id === metric) || graphViews[0];
@@ -223,6 +245,8 @@ export default function App() {
   const [latestInsight, setLatestInsight] = useState(defaultInsight);
   const [modelAnswer, setModelAnswer] = useState(null);
   const [backendOnline, setBackendOnline] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [taglineIndex, setTaglineIndex] = useState(0);
 
   useEffect(() => writeJson(STORAGE_KEYS.user, user), [user]);
   useEffect(() => writeJson(STORAGE_KEYS.months, months), [months]);
@@ -231,6 +255,13 @@ export default function App() {
     writeJson(STORAGE_KEYS.theme, theme);
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTaglineIndex((current) => (current + 1) % taglineLines.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const toggleTheme = () => {
     setTheme((current) => (current === 'light' ? 'dark' : 'light'));
@@ -243,10 +274,10 @@ export default function App() {
     const first = forecast[0] || { expense: 0, income: 0, savings: 0, netWorth: 0 };
     const last = forecast[forecast.length - 1] || first;
     return [
-      { id: 'expense', label: 'Projected expenses', value: currency(last.expense), sub: `Starts near ${currency(first.expense)}` },
-      { id: 'income', label: 'Projected income', value: currency(last.income), sub: `Starts near ${currency(first.income)}` },
-      { id: 'savings', label: 'Projected savings', value: currency(last.savings), sub: `Starts near ${currency(first.savings)}` },
-      { id: 'netWorth', label: 'Projected net worth', value: currency(last.netWorth), sub: `Starts near ${currency(first.netWorth)}` },
+      { id: 'expense', label: 'Projected expenses', value: currency(last.expense), sub: `Starts near ${currency(first.expense)}`, icon: '💸' },
+      { id: 'income', label: 'Projected income', value: currency(last.income), sub: `Starts near ${currency(first.income)}`, icon: '💰' },
+      { id: 'savings', label: 'Projected savings', value: currency(last.savings), sub: `Starts near ${currency(first.savings)}`, icon: '🏦' },
+      { id: 'netWorth', label: 'Projected net worth', value: currency(last.netWorth), sub: `Starts near ${currency(first.netWorth)}`, icon: '💎' },
     ];
   }, [forecast]);
 
@@ -275,8 +306,8 @@ export default function App() {
       { role: 'user', text },
     ]);
     setQuestion('');
+    setLoading(true);
 
-    // Try the backend model first; it returns a richer text answer.
     let answer = localInsight.answer;
     let metric = localInsight.metric;
     let title = localInsight.title;
@@ -294,6 +325,7 @@ export default function App() {
       setBackendOnline(false);
     }
 
+    setLoading(false);
     setModelAnswer({ text: answer, title, source });
     if (metric) setGraphMetric(metric);
     setChat((current) => [
@@ -327,12 +359,18 @@ export default function App() {
         <section className="auth-panel">
           <div className="auth-copy">
             <div className="eyebrow">FinTwinAI</div>
+            <p className="tagline">{taglineLines[taglineIndex]}</p>
             <h1>{isLogin ? 'Welcome back' : 'Create your account'}</h1>
-            <p>
+            <p className="auth-subtitle">
               {isLogin
                 ? 'Sign in to your financial workspace and continue tracking your months.'
                 : 'Register to start uploading monthly finances and asking the model.'}
             </p>
+            <ul className="feature-list">
+              <li><span>🤖</span> 4 specialized AI agents analyze your finances</li>
+              <li><span>📊</span> Scenario forecasts for life decisions</li>
+              <li><span>💡</span> Explainable insights in plain language</li>
+            </ul>
             <div className="auth-toggle">
               <button
                 type="button"
@@ -455,6 +493,7 @@ export default function App() {
             </label>
             <div className="form-actions">
               <button className="primary-button" type="submit">Save month</button>
+              <button className="secondary-button" type="button" onClick={() => setMonths(demoMonths.map((item) => ({ ...item, id: `${item.month}-${Math.random()}` })))}>Load demo data</button>
               <span>{currentMonth ? `Latest upload: ${formatMonthLabel(currentMonth.month)}` : 'No uploads yet'}</span>
             </div>
           </form>
@@ -473,8 +512,8 @@ export default function App() {
                 className={card.id === graphMetric ? 'output-card active' : 'output-card'}
                 onClick={() => setGraphMetric(card.id)}
               >
-                <span>{card.label}</span>
-                <strong>{card.value}</strong>
+                 <span>{card.icon} {card.label}</span>
+                 <strong>{card.value}</strong>
                 <small>{card.sub}</small>
               </button>
             ))}
@@ -483,7 +522,7 @@ export default function App() {
 
         <section className="panel chart-panel">
           <div className="section-title">
-            <h2>{graphViews.find((item) => item.id === graphMetric)?.label} Graph</h2>
+             <h2>{graphViews.find((item) => item.id === graphMetric)?.icon} {graphViews.find((item) => item.id === graphMetric)?.label} Graph</h2>
             <div className="segmented">
               {spanOptions.map((option) => (
                 <button
@@ -527,7 +566,16 @@ export default function App() {
           </div>
           <div className="chat-thread">
             {chat.length === 0 ? (
-              <div className="empty-chat">{defaultInsight.answer}</div>
+              <div className="empty-chat">
+                <p>{defaultInsight.answer}</p>
+                <div className="suggested-grid">
+                  {suggestedQuestions.map((q) => (
+                    <button key={q} type="button" className="suggested-question" onClick={() => setQuestion(q)}>
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : (
               chat.map((message, index) => {
                 const messageGraph = message.metric ? getGraphView(message.metric) : null;
@@ -572,18 +620,37 @@ export default function App() {
               })
             )}
           </div>
+          {loading && (
+            <div className="chat-bubble assistant typing-indicator">
+              <span className="dot"></span>
+              <span className="dot"></span>
+              <span className="dot"></span>
+              <span>FinTwin is thinking...</span>
+            </div>
+          )}
           <form className="chat-form" onSubmit={handleQuestionSend}>
             <input
               type="text"
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
-              placeholder="What happens to my expenses in 24 months? Can I handle a house loan? What about EMI pressure?"
+              placeholder="What happens to my expenses in 24 months? ..."
+              disabled={loading}
             />
-            <button className="primary-button" type="submit">Send</button>
+            <button className="primary-button" type="submit" disabled={loading}>Send</button>
           </form>
+          {!loading && chat.length > 0 && (
+            <div className="suggested-bar">
+              {suggestedQuestions.map((q) => (
+                <button key={q} type="button" className="suggested-question small" onClick={() => setQuestion(q)}>
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
           {modelAnswer && (
             <div className="model-answer-panel">
               <div className="model-answer-title">
+                <span className="agent-avatar">🤖</span>
                 <strong>{modelAnswer.title}</strong>
                 <span className="model-answer-source">{modelAnswer.source}</span>
               </div>
