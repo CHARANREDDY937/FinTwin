@@ -1,9 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   Line,
   LineChart,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -242,6 +247,7 @@ export default function App() {
   const [question, setQuestion] = useState('');
   const [graphMetric, setGraphMetric] = useState('expense');
   const [graphSpan, setGraphSpan] = useState(12);
+  const [graphType, setGraphType] = useState('bar');
   const [latestInsight, setLatestInsight] = useState(defaultInsight);
   const [modelAnswer, setModelAnswer] = useState(null);
   const [backendOnline, setBackendOnline] = useState(null);
@@ -280,6 +286,22 @@ export default function App() {
       { id: 'netWorth', label: 'Projected net worth', value: currency(last.netWorth), sub: `Starts near ${currency(first.netWorth)}`, icon: '💎' },
     ];
   }, [forecast]);
+
+  const pieData = useMemo(() => {
+    const latest = latestByMonth(months);
+    if (!latest) return [];
+    const income = toNumber(latest.activeIncome) + toNumber(latest.passiveIncome);
+    const moneySpent = toNumber(latest.moneySpent);
+    const emi = toNumber(latest.emiMonthly);
+    const misc = toNumber(latest.miscellaneousCharges);
+    const savings = income - moneySpent - emi - misc;
+    return [
+      { name: 'Money Spent', value: moneySpent, color: '#5f8f88' },
+      { name: 'EMI', value: emi, color: '#779eb2' },
+      { name: 'Misc', value: misc, color: '#a97c5e' },
+      { name: 'Savings', value: Math.max(0, savings), color: '#7e8f62' },
+    ];
+  }, [months]);
 
   const handleMonthSave = (event) => {
     event.preventDefault();
@@ -425,6 +447,17 @@ export default function App() {
             <button className="primary-button wide" type="submit">
               {isLogin ? 'Sign In' : 'Create Account'}
             </button>
+            <button
+              className="demo-button wide"
+              type="button"
+              onClick={() => {
+                setUser({ name: 'Demo User', email: 'demo@fintwin.ai' });
+                localStorage.setItem('fintwinai:token', 'demo-token');
+                setMonths(demoMonths.map((item) => ({ ...item, id: `${item.month}-${Math.random()}` })));
+              }}
+            >
+              Try the demo (no backend needed)
+            </button>
           </form>
         </section>
       </div>
@@ -522,7 +555,7 @@ export default function App() {
 
         <section className="panel chart-panel">
           <div className="section-title">
-             <h2>{graphViews.find((item) => item.id === graphMetric)?.icon} {graphViews.find((item) => item.id === graphMetric)?.label} Graph</h2>
+            <h2>{graphViews.find((item) => item.id === graphMetric)?.icon} {graphViews.find((item) => item.id === graphMetric)?.label} Graph</h2>
             <div className="segmented">
               {spanOptions.map((option) => (
                 <button
@@ -534,26 +567,93 @@ export default function App() {
                   {option}M
                 </button>
               ))}
+              <button
+                type="button"
+                className={graphType === 'bar' ? 'segment active' : 'segment'}
+                onClick={() => setGraphType('bar')}
+              >
+                ■ Bars
+              </button>
+              <button
+                type="button"
+                className={graphType === 'line' ? 'segment active' : 'segment'}
+                onClick={() => setGraphType('line')}
+              >
+                ▰ Line
+              </button>
+              <button
+                type="button"
+                className={graphType === 'pie' ? 'segment active' : 'segment'}
+                onClick={() => setGraphType('pie')}
+              >
+                🥧 Pie
+              </button>
             </div>
           </div>
           <div className="chart-wrap">
-            <ResponsiveContainer width="100%" height={360}>
-              <LineChart data={forecast}>
-                <CartesianGrid stroke="#dbe5e1" strokeDasharray="3 3" />
-                <XAxis dataKey="month" stroke="#617570" />
-                <YAxis stroke="#617570" />
-                <Tooltip formatter={(value) => currency(value)} />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey={graphMetric}
-                  name={graphViews.find((item) => item.id === graphMetric)?.label || graphMetric}
-                  stroke={graphViews.find((item) => item.id === graphMetric)?.color || '#5f8f88'}
-                  strokeWidth={3}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {graphType === 'pie' ? (
+              pieData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={360}>
+                  <PieChart data={pieData}>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={70}
+                      outerRadius={130}
+                      paddingAngle={4}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => currency(value)} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="empty-chart">
+                  <p>No monthly data uploaded yet. Add a month to see the breakdown.</p>
+                </div>
+              )
+            ) : graphType === 'bar' ? (
+              <ResponsiveContainer width="100%" height={360}>
+                <BarChart data={forecast}>
+                  <CartesianGrid stroke="#dbe5e1" strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" stroke="#617570" />
+                  <YAxis stroke="#617570" tickFormatter={(value) => currency(value)} width={72} />
+                  <Tooltip formatter={(value) => currency(value)} />
+                  <Legend />
+                  <Bar
+                    dataKey={graphMetric}
+                    name={graphViews.find((item) => item.id === graphMetric)?.label || graphMetric}
+                    fill={graphViews.find((item) => item.id === graphMetric)?.color || '#5f8f88'}
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <ResponsiveContainer width="100%" height={360}>
+                <LineChart data={forecast}>
+                  <CartesianGrid stroke="#dbe5e1" strokeDasharray="3 3" />
+                  <XAxis dataKey="month" stroke="#617570" />
+                  <YAxis stroke="#617570" tickFormatter={(value) => currency(value)} width={72} />
+                  <Tooltip formatter={(value) => currency(value)} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey={graphMetric}
+                    name={graphViews.find((item) => item.id === graphMetric)?.label || graphMetric}
+                    stroke={graphViews.find((item) => item.id === graphMetric)?.color || '#5f8f88'}
+                    strokeWidth={3}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </section>
 
@@ -590,30 +690,28 @@ export default function App() {
                       {message.text}
                     </button>
                     {message.role === 'assistant' && messageGraph && (
-                      <div className="chat-result-graph">
-                        <div className="chat-result-title">
-                          <strong>{message.title || `${messageGraph.label} Prediction`}</strong>
-                          <span>{graphSpan} month forecast</span>
-                        </div>
-                        <div className="chat-chart-wrap">
-                          <ResponsiveContainer width="100%" height={190}>
-                            <LineChart data={forecast}>
-                              <CartesianGrid stroke="#dbe5e1" strokeDasharray="3 3" />
-                              <XAxis dataKey="month" stroke="#617570" />
-                              <YAxis stroke="#617570" width={72} tickFormatter={(value) => currency(value)} />
-                              <Tooltip formatter={(value) => currency(value)} />
-                              <Line
-                                type="monotone"
-                                dataKey={message.metric}
-                                name={messageGraph.label}
-                                stroke={messageGraph.color}
-                                strokeWidth={3}
-                                dot={false}
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
+                       <div className="chat-result-graph">
+                         <div className="chat-result-title">
+                           <strong>{message.title || `${messageGraph.label} Prediction`}</strong>
+                           <span>{graphSpan} month forecast</span>
+                         </div>
+                         <div className="chat-chart-wrap">
+                           <ResponsiveContainer width="100%" height={190}>
+                             <BarChart data={forecast}>
+                               <CartesianGrid stroke="#dbe5e1" strokeDasharray="3 3" vertical={false} />
+                               <XAxis dataKey="month" stroke="#617570" hide={forecast.length > 12} />
+                               <YAxis stroke="#617570" width={72} tickFormatter={(value) => currency(value)} />
+                               <Tooltip formatter={(value) => currency(value)} />
+                               <Bar
+                                 dataKey={message.metric}
+                                 name={messageGraph.label}
+                                 fill={messageGraph.color}
+                                 radius={[3, 3, 0, 0]}
+                               />
+                             </BarChart>
+                           </ResponsiveContainer>
+                         </div>
+                       </div>
                     )}
                   </React.Fragment>
                 );
