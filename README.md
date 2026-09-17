@@ -34,9 +34,17 @@ FinTwinAI is a **multi-agent financial coaching platform**. Instead of generic b
 ## Quick start
 
 ```bash
-# Backend (Python 3.10+)
+# Backend (Windows PowerShell)
 cd backend
-python -m venv venv && venv\Scripts\activate   # or: source venv/bin/activate
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn app:app --reload --port 8000
+
+# Backend (macOS / Linux / Bash)
+cd backend
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 uvicorn app:app --reload --port 8000
 
