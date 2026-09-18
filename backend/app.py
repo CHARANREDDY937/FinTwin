@@ -6,14 +6,11 @@ from database import init_db, close_db
 from auth.routes import router as auth_router
 from api.financial import router as financial_router
 from api.chat import router as chat_router
-from agents.goal_agent import GoalAgent
-from agents.investment_agent import InvestmentAgent
-from agents.risk_agent import RiskAgent
-from agents.spending_agent import SpendingAgent
+from agents.collaborative_graph import collaborative_system
 from core.digital_twin_engine import FinancialDigitalTwinEngine
 from core.explainability_engine import ExplainabilityEngine
 from core.forecasting_engine import ForecastingScenarioEngine
-from schemas import ChatRequest, FinancialMonth, PersonalizedTrainingRequest, ScenarioRequest
+from schemas import ChatRequest, FinancialMonth, PersonalizedTrainingRequest, ScenarioRequest, TwinProfileRequest
 from services.model_service import PersonalizedFinanceModelService
 from training.dataset_registry import dataset_summary
 from training.personalize_from_profile import export_personalization_data
@@ -44,12 +41,6 @@ twin_engine = FinancialDigitalTwinEngine()
 forecasting_engine = ForecastingScenarioEngine()
 explainability_engine = ExplainabilityEngine()
 model_service = PersonalizedFinanceModelService()
-agents = [
-    SpendingAgent(),
-    InvestmentAgent(),
-    RiskAgent(),
-    GoalAgent(),
-]
 
 
 @app.get("/health")
@@ -63,15 +54,20 @@ def datasets_overview():
 
 
 @app.post("/twin/profile")
-def create_financial_twin(months: list[FinancialMonth]):
-    profile = twin_engine.build_profile(months)
-    agent_outputs = [agent.analyze(profile, months) for agent in agents]
-    explanation = explainability_engine.explain(profile)
+def create_financial_twin(request: TwinProfileRequest):
+    result = collaborative_system.run(
+        months=request.months,
+        user_question=request.question,
+        max_rounds=request.max_rounds or 3,
+    )
 
     return {
-        "profile": profile,
-        "agents": agent_outputs,
-        "explainability": explanation,
+        "profile": result["profile"],
+        "agents": result["agent_outputs"],
+        "final_answer": result["final_answer"],
+        "explainability": result["explanation"],
+        "forecast": result["forecast"],
+        "collaboration_rounds": result["collaboration_rounds"],
     }
 
 
@@ -96,39 +92,37 @@ def simulate_scenario(request: ScenarioRequest):
 
 @app.post("/chat")
 def chat_with_twin(request: ChatRequest):
-    profile = twin_engine.build_profile(request.months)
-    agent_outputs = [agent.analyze(profile, request.months) for agent in agents]
-    forecast = forecasting_engine.simulate(
-        profile=profile,
+    result = collaborative_system.run(
         months=request.months,
-        model=request.model,
-        scenario=request.scenario,
-        horizon=request.horizon,
+        user_question=request.question,
+        max_rounds=3,
     )
-    explanation = explainability_engine.explain(profile)
+
     fallback_answer = twin_engine.answer_question(
         question=request.question,
-        profile=profile,
-        forecast=forecast,
-        explanation=explanation,
+        profile=result["profile"],
+        forecast=result["forecast"],
+        explanation=result["explanation"],
     )
     model_answer = model_service.answer(
         question=request.question,
-        profile=profile,
-        forecast=forecast,
-        explanation=explanation,
+        profile=result["profile"],
+        forecast=result["forecast"],
+        explanation=result["explanation"],
         fallback_answer=fallback_answer,
-        agent_outputs=agent_outputs,
+        agent_outputs=list(result["agent_outputs"].values()),
     )
 
     return {
         "answer": model_answer["answer"],
         "answer_source": model_answer["answer_source"],
         "model_name": model_answer["model_name"],
-        "profile": profile,
-        "agents": agent_outputs,
-        "forecast": forecast,
-        "explainability": explanation,
+        "profile": result["profile"],
+        "agents": result["agent_outputs"],
+        "final_answer": result["final_answer"],
+        "forecast": result["forecast"],
+        "explainability": result["explanation"],
+        "collaboration_rounds": result["collaboration_rounds"],
     }
 
 

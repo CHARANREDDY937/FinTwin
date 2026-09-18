@@ -40,7 +40,7 @@ class PersonalizedFinanceModelService:
                     return {
                         "answer": groq_answer,
                         "answer_source": "groq_llm",
-                        "model_name": "llama-3.3-70b-versatile",
+                        "model_name": "qwen/qwen3.8-27b",
                     }
             except Exception as e:
                 print(f"Groq service error: {e}")

@@ -22,7 +22,7 @@ const graphViews = [
   { id: 'netWorth', label: 'Net Worth', color: '#06B6D4', icon: '💎' },
 ];
 
-const spanOptions = [6, 12, 24, 36];
+const spanOptions = [6, 12, 24, 36, 60];
 
 const suggestedQuestions = [
   'Can I afford a house in 24 months?',
@@ -39,6 +39,79 @@ function currency(value) {
     currency: 'INR',
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function InlineChart({ data, metric, type, color, span }) {
+  if (!data || data.length === 0) return null;
+
+  const chartHeight = 180;
+  const showYAxis = span > 12;
+
+  return (
+    <ResponsiveContainer width="100%" height={chartHeight}>
+      {type === 'line' ? (
+        <LineChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: showYAxis ? 20 : 5 }}>
+          <CartesianGrid stroke="var(--border-subtle, rgba(255,255,255,0.08))" strokeDasharray="2 2" vertical={false} />
+          <XAxis dataKey="month" stroke="var(--text-muted, #94a3b8)" tickLine={false} tick={{ fontSize: 10 }} interval={span > 12 ? 'preserveStartEnd' : 0} />
+          <YAxis
+            stroke="var(--text-muted, #94a3b8)"
+            tickFormatter={(v) => currency(v)}
+            width={showYAxis ? 55 : 0}
+            tickLine={false}
+            tick={{ fontSize: 10 }}
+            hide={!showYAxis}
+          />
+          <Tooltip
+            formatter={(v) => currency(v)}
+            contentStyle={{
+              backgroundColor: 'var(--tooltip-bg, #080e20)',
+              borderColor: 'var(--tooltip-border, rgba(255,215,0,0.4))',
+              borderRadius: '8px',
+              color: '#f0f4ff',
+              fontSize: '11px',
+            }}
+          />
+          <Line
+            type="monotone"
+            dataKey={metric}
+            stroke={color}
+            strokeWidth={2}
+            dot={false}
+            activeDot={{ r: 4, fill: color }}
+          />
+        </LineChart>
+      ) : (
+        <BarChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: showYAxis ? 20 : 5 }}>
+          <CartesianGrid stroke="var(--border-subtle, rgba(255,255,255,0.08))" strokeDasharray="2 2" vertical={false} />
+          <XAxis dataKey="month" stroke="var(--text-muted, #94a3b8)" tickLine={false} tick={{ fontSize: 10 }} interval={span > 12 ? 'preserveStartEnd' : 0} />
+          <YAxis
+            stroke="var(--text-muted, #94a3b8)"
+            tickFormatter={(v) => currency(v)}
+            width={showYAxis ? 55 : 0}
+            tickLine={false}
+            tick={{ fontSize: 10 }}
+            hide={!showYAxis}
+          />
+          <Tooltip
+            formatter={(v) => currency(v)}
+            contentStyle={{
+              backgroundColor: 'var(--tooltip-bg, #080e20)',
+              borderColor: 'var(--tooltip-border, rgba(255,215,0,0.4))',
+              borderRadius: '8px',
+              color: '#f0f4ff',
+              fontSize: '11px',
+            }}
+          />
+          <Bar
+            dataKey={metric}
+            fill={color}
+            radius={[3, 3, 0, 0]}
+            maxBarWidth={30}
+          />
+        </BarChart>
+      )}
+    </ResponsiveContainer>
+  );
 }
 
 export default function ChatPage({
@@ -243,10 +316,21 @@ export default function ChatPage({
                     )}
                     <div className="bubble-text-content">{msg.text}</div>
                     {msg.metric && (
-                      <div className="bubble-metric-hint">
-                        <span>Graph synchronized to: </span>
-                        <strong>{msg.metric.toUpperCase()}</strong>
-                      </div>
+                      <>
+                        <div className="bubble-metric-hint">
+                          <span>Graph synchronized to: </span>
+                          <strong>{msg.metric.toUpperCase()}</strong>
+                        </div>
+                        <div className="bubble-chart-container">
+                          <InlineChart
+                            data={forecast}
+                            metric={msg.metric}
+                            type={graphType}
+                            color={activeView.color}
+                            span={graphSpan}
+                          />
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -358,16 +442,16 @@ export default function ChatPage({
           <div className="span-selector-row">
             <span className="span-label">Projection Horizon:</span>
             <div className="span-pills">
-              {spanOptions.map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  className={`span-pill ${graphSpan === opt ? 'active' : ''}`}
-                  onClick={() => setGraphSpan(opt)}
-                >
-                  {opt}M
-                </button>
-              ))}
+{spanOptions.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    className={`span-pill ${graphSpan === opt ? 'active' : ''}`}
+                    onClick={() => setGraphSpan(opt)}
+                  >
+                    {opt >= 12 && opt % 12 === 0 ? `${opt / 12}Y` : `${opt}M`}
+                  </button>
+                ))}
             </div>
           </div>
 

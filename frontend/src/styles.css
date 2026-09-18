@@ -99,78 +99,109 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   CSS Design Tokens — Dark Mode (Refined Slate / Obsidian — NO Neon)
+   CSS Design Tokens — Dark Mode (Black, Gold & Red Theme)
 ───────────────────────────────────────────────────────────── */
 [data-theme='dark'] {
   color-scheme: dark;
 
-  /* Rich Charcoal Slate */
-  --bg-app: #0B0F19;
-  --bg-surface: #131B2E;
-  --bg-surface-solid: #131B2E;
-  --bg-surface-hover: #1E293B;
-  --bg-card: #131B2E;
-  --bg-elevated: #1E293B;
-  --bg-input: #0B0F19;
+  /* Pure Black Backgrounds */
+  --bg-app: #000000;
+  --bg-surface: #0A0A0A;
+  --bg-surface-solid: #0A0A0A;
+  --bg-surface-hover: #111111;
+  --bg-card: #0A0A0A;
+  --bg-elevated: #111111;
+  --bg-input: #000000;
 
   /* Crisp Light Text */
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --text-inverse: #0B0F19;
+  --text-primary: #FFFFFF;
+  --text-secondary: #CCCCCC;
+  --text-muted: #888888;
+  --text-inverse: #000000;
 
-  /* Muted Elegant Pastels (No blinding neon) */
-  --color-lavender: #A78BFA;
-  --color-lavender-hover: #C4B5FD;
-  --color-lavender-light: rgba(167, 139, 250, 0.14);
-  --color-lavender-border: rgba(167, 139, 250, 0.3);
+  /* Gold Accents */
+  --color-gold: #FFD700;
+  --color-gold-hover: #FFC107;
+  --color-gold-light: rgba(255, 215, 0, 0.14);
+  --color-gold-border: rgba(255, 215, 0, 0.3);
 
-  --color-apricot: #FB923C;
-  --color-apricot-hover: #FDBA74;
-  --color-apricot-light: rgba(251, 146, 60, 0.14);
-  --color-apricot-border: rgba(251, 146, 60, 0.3);
+  --color-gold-bright: #FFF176;
+  --color-gold-bright-hover: #FFEB3B;
 
-  --color-pink: #F472B6;
-  --color-pink-hover: #F9A8D4;
-  --color-pink-light: rgba(244, 114, 182, 0.14);
-  --color-pink-border: rgba(244, 114, 182, 0.3);
+  /* Red Accents */
+  --color-red: #DC143C;
+  --color-red-hover: #FF0000;
+  --color-red-light: rgba(220, 20, 60, 0.14);
+  --color-red-border: rgba(220, 20, 60, 0.3);
 
-  --color-sage: #34D399;
-  --color-sage-hover: #6EE7B7;
-  --color-sage-light: rgba(52, 211, 153, 0.14);
-  --color-sage-border: rgba(52, 211, 153, 0.3);
+  --color-red-bright: #FF4444;
+  --color-red-bright-hover: #FF6666;
 
-  --color-primary: #A78BFA;
-  --color-primary-hover: #C4B5FD;
-  --color-primary-light: rgba(167, 139, 250, 0.14);
-  --color-primary-glow: rgba(167, 139, 250, 0.25);
+  /* Primary Theme Aliases (Gold as primary) */
+  --color-primary: #FFD700;
+  --color-primary-hover: #FFC107;
+  --color-primary-light: rgba(255, 215, 0, 0.14);
+  --color-primary-glow: rgba(255, 215, 0, 0.25);
 
-  --color-emerald: #34D399;
-  --color-emerald-light: rgba(52, 211, 153, 0.14);
-  --color-amber: #FBBF24;
-  --color-amber-light: rgba(251, 191, 36, 0.14);
-  --color-coral: #FB923C;
-  --color-rose: #FB7185;
-  --color-rose-light: rgba(251, 113, 133, 0.14);
+  /* Backwards Compatibility - Map old variable names to new gold/red theme */
+  --color-lavender: #FFD700;
+  --color-lavender-hover: #FFC107;
+  --color-lavender-light: rgba(255, 215, 0, 0.14);
+  --color-lavender-border: rgba(255, 215, 0, 0.3);
 
-  --gradient-primary: linear-gradient(135deg, #A78BFA 0%, #FB923C 100%);
-  --gradient-lavender-pink: linear-gradient(135deg, #A78BFA 0%, #F472B6 100%);
-  --gradient-surface: linear-gradient(180deg, #131B2E 0%, #0F172A 100%);
+  --color-apricot: #FF6B35;
+  --color-apricot-hover: #FF8C42;
+  --color-apricot-light: rgba(255, 107, 53, 0.14);
+  --color-apricot-border: rgba(255, 107, 53, 0.3);
 
-  --border-subtle: #1E293B;
-  --border-medium: #334155;
-  --border-focus: #A78BFA;
+  --color-pink: #DC143C;
+  --color-pink-hover: #FF4444;
+  --color-pink-light: rgba(220, 20, 60, 0.14);
+  --color-pink-border: rgba(220, 20, 60, 0.3);
+
+  --color-sage: #22C55E;
+  --color-sage-hover: #4ADE80;
+  --color-sage-light: rgba(34, 197, 94, 0.14);
+  --color-sage-border: rgba(34, 197, 94, 0.3);
+
+  /* Semantic Colors */
+  --color-emerald: #22C55E;
+  --color-emerald-light: rgba(34, 197, 94, 0.14);
+  --color-amber: #FFD700;
+  --color-amber-light: rgba(255, 215, 0, 0.14);
+  --color-coral: #FF6B35;
+  --color-rose: #DC143C;
+  --color-rose-light: rgba(220, 20, 60, 0.14);
+  --color-cyan: #06B6D4;
+  --color-violet: #A855F7;
+
+  /* Professional Gradients */
+  --gradient-primary: linear-gradient(135deg, #FFD700 0%, #DC143C 100%);
+  --gradient-gold-red: linear-gradient(135deg, #FFD700 0%, #DC143C 100%);
+  --gradient-red-gold: linear-gradient(135deg, #DC143C 0%, #FFD700 100%);
+  --gradient-surface: linear-gradient(180deg, #0A0A0A 0%, #000000 100%);
+
+  /* Backwards Compatibility */
+  --gradient-lavender-pink: linear-gradient(135deg, #FFD700 0%, #DC143C 100%);
+  --gradient-warm: linear-gradient(135deg, #FF6B35 0%, #FFD700 100%);
+  --gradient-sage: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+
+  /* Borders */
+  --border-subtle: #1A1A1A;
+  --border-medium: #333333;
+  --border-focus: #FFD700;
   --border-inner: rgba(255, 255, 255, 0.05);
 
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 14px -1px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 12px 28px -4px rgba(0, 0, 0, 0.6);
-  --shadow-popup: 0 20px 40px -6px rgba(0, 0, 0, 0.75);
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 4px 14px -1px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 12px 28px -4px rgba(0, 0, 0, 0.8);
+  --shadow-popup: 0 20px 40px -6px rgba(0, 0, 0, 0.9);
 
-  --gauge-track: #1E293B;
-  --tooltip-bg: #1E293B;
-  --tooltip-border: #334155;
+  --gauge-track: #1A1A1A;
+  --tooltip-bg: #111111;
+  --tooltip-border: #333333;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -2679,6 +2710,27 @@ label {
   font-size: 0.72rem;
   color: var(--color-apricot);
   font-weight: 600;
+}
+
+.bubble-chart-container {
+  margin-top: 10px;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  padding: 8px;
+  overflow: hidden;
+}
+
+.bubble-chart-container .recharts-wrapper {
+  outline: none;
+}
+
+.chat-message-bubble.assistant .bubble-chart-container {
+  border-color: var(--color-lavender-border);
+}
+
+.chat-message-bubble.user .bubble-chart-container {
+  border-color: var(--color-apricot-border);
 }
 
 .chat-quick-query-strip {

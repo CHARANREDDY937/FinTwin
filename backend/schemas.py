@@ -47,6 +47,12 @@ class PersonalizedTrainingRequest(BaseModel):
     max_samples: int = Field(default=2000, ge=100, le=20000)
 
 
+class TwinProfileRequest(BaseModel):
+    months: List[FinancialMonth]
+    question: Optional[str] = None
+    max_rounds: Optional[int] = Field(default=3, ge=1, le=5)
+
+
 class UserCreate(BaseModel):
     email: EmailStr
     name: str

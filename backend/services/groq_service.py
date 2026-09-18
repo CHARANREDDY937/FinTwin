@@ -18,7 +18,7 @@ class GroqService:
     async def chat_completion(
         self,
         messages: list[dict],
-        model: str = "llama-3.3-70b-versatile",
+        model: str = "qwen/qwen3.8-27b",
         temperature: float = 0.3,
         max_tokens: int = 1024
     ) -> Optional[str]:
@@ -87,7 +87,7 @@ Answer concisely using their specific numbers."""
         return await self.chat_completion([
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
-        ], model="llama-3.3-70b-versatile", temperature=0.3, max_tokens=512)
+        ], model="qwen/qwen3.8-27b", temperature=0.3, max_tokens=512)
 
 
 groq_service = GroqService()
