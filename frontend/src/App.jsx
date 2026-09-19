@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { askChat, healthCheck } from './api';
 import Navbar from './components/Navbar';
-import GlobalChatWidget from './components/GlobalChatWidget';
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './DashboardPage';
@@ -193,6 +192,7 @@ function buildInsight(question, profile, forecast) {
 
 export default function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(() => readJson(STORAGE_KEYS.user, null));
   // Default to demo months if empty so mentors immediately see stunning visualizations!
   const [months, setMonths] = useState(() => {
@@ -217,6 +217,7 @@ export default function App() {
   useEffect(() => {
     writeJson(STORAGE_KEYS.theme, theme);
     document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
   // Periodic heartbeat to verify backend health
@@ -375,17 +376,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-
-      {/* Universal Floating AI Chat Pop-up Modal */}
-      <GlobalChatWidget
-        chat={chat}
-        question={question}
-        setQuestion={setQuestion}
-        handleQuestionSend={handleQuestionSend}
-        loading={loading}
-        backendOnline={backendOnline}
-        latestInsight={latestInsight}
-      />
     </div>
   );
 }

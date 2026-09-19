@@ -15,13 +15,62 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import {
+  TrendingUp,
+  TrendingDown,
+  Landmark,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  Calendar,
+  Layers,
+  Bot,
+  FileText,
+  BarChart3,
+  LineChart as LineChartIcon,
+  PieChart as PieChartIcon,
+  Target,
+  Zap,
+  Cpu,
+} from 'lucide-react';
 
 const graphViews = [
-  { id: 'expense', label: 'Expenses', color: '#EF4444', icon: '💸' },
-  { id: 'income', label: 'Income', color: '#10B981', icon: '💰' },
-  { id: 'savings', label: 'Savings', color: '#6366F1', icon: '🏦' },
-  { id: 'netWorth', label: 'Net Worth', color: '#06B6D4', icon: '💎' },
+  { id: 'expense', label: 'Expenses', color: '#FB7185', icon: TrendingDown },
+  { id: 'income', label: 'Income', color: '#34D399', icon: TrendingUp },
+  { id: 'savings', label: 'Savings', color: '#A78BFA', icon: Landmark },
+  { id: 'netWorth', label: 'Net Worth', color: '#38BDF8', icon: Sparkles },
 ];
+
+const cardMeta = {
+  expense: {
+    icon: TrendingDown,
+    accent: '#FB7185',
+    glow: 'rgba(251, 113, 133, 0.22)',
+    trend: 'Controlled burn rate',
+    trendType: 'neutral',
+  },
+  income: {
+    icon: TrendingUp,
+    accent: '#34D399',
+    glow: 'rgba(52, 211, 153, 0.22)',
+    trend: '+8.4% projected trend',
+    trendType: 'positive',
+  },
+  savings: {
+    icon: Landmark,
+    accent: '#A78BFA',
+    glow: 'rgba(167, 139, 250, 0.22)',
+    trend: 'Positive surplus rate',
+    trendType: 'positive',
+  },
+  netWorth: {
+    icon: Sparkles,
+    accent: '#38BDF8',
+    glow: 'rgba(56, 189, 248, 0.22)',
+    trend: 'Compounding trajectory',
+    trendType: 'info',
+  },
+};
 
 const spanOptions = [6, 12, 24, 36];
 
@@ -39,6 +88,28 @@ function formatMonthLabel(monthValue) {
   return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(
     new Date(year, month - 1, 1),
   );
+}
+
+function CustomGlassTooltip({ active, payload, label }) {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    return (
+      <div className="custom-glass-tooltip">
+        <div className="tooltip-month">{label || data.name}</div>
+        <div className="tooltip-row">
+          <span
+            className="tooltip-indicator"
+            style={{ backgroundColor: data.color || data.fill || (data.payload && data.payload.color) || '#A78BFA' }}
+          />
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 500 }}>
+            {data.name || 'Value'}:
+          </span>
+          <span>{currency(data.value)}</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
 }
 
 export default function DashboardPage({
@@ -62,6 +133,7 @@ export default function DashboardPage({
   const latestMonth = months.length ? [...months].sort((a, b) => (a.month > b.month ? -1 : 1))[0] : null;
 
   const activeView = graphViews.find((v) => v.id === graphMetric) || graphViews[0];
+  const ActiveIcon = activeView.icon;
   const savingsRate = profile.income ? ((profile.savings / profile.income) * 100).toFixed(1) : 0;
   const dti = profile.income ? ((profile.emi / profile.income) * 100).toFixed(1) : 0;
 
@@ -116,9 +188,13 @@ export default function DashboardPage({
             className="hero-action-btn primary"
             onClick={() => navigate('/chat')}
           >
-            <span className="action-icon">🤖</span>
+            <span className="action-icon">
+              <Bot size={17} />
+            </span>
             <span>Ask AI Twin Studio</span>
-            <span className="action-arrow">→</span>
+            <span className="action-arrow">
+              <ArrowRight size={15} />
+            </span>
           </button>
 
           <button
@@ -126,9 +202,13 @@ export default function DashboardPage({
             className="hero-action-btn secondary"
             onClick={() => navigate('/scenarios')}
           >
-            <span className="action-icon">⚡</span>
+            <span className="action-icon">
+              <Zap size={17} />
+            </span>
             <span>Simulate Life Scenarios</span>
-            <span className="action-arrow">→</span>
+            <span className="action-arrow">
+              <ArrowRight size={15} />
+            </span>
           </button>
 
           <button
@@ -136,9 +216,13 @@ export default function DashboardPage({
             className="hero-action-btn tertiary"
             onClick={() => navigate('/records')}
           >
-            <span className="action-icon">📑</span>
+            <span className="action-icon">
+              <FileText size={17} />
+            </span>
             <span>Manage Records Ledger</span>
-            <span className="action-arrow">→</span>
+            <span className="action-arrow">
+              <ArrowRight size={15} />
+            </span>
           </button>
         </div>
       </div>
@@ -146,13 +230,16 @@ export default function DashboardPage({
       {/* No Data Callout Banner if 0 months */}
       {months.length === 0 && (
         <div className="demo-prompt-banner">
-          <div className="prompt-icon">💡</div>
+          <div className="prompt-icon">
+            <Sparkles size={20} color="#FB923C" />
+          </div>
           <div className="prompt-text">
             <h4>No financial months uploaded yet</h4>
             <p>Load the 6-month pre-calibrated demo dataset to immediately inspect full forecasting charts and multi-agent analytics.</p>
           </div>
           <button type="button" className="primary-button" onClick={handleLoadDemo}>
-            ⚡ Load 6-Month Demo Data
+            <Sparkles size={14} />
+            <span>Load 6-Month Demo Data</span>
           </button>
         </div>
       )}
@@ -161,22 +248,39 @@ export default function DashboardPage({
       <div className="summary-cards-grid">
         {summaryCards.map((card, i) => {
           const isSelected = card.id === graphMetric;
+          const meta = cardMeta[card.id] || cardMeta.savings;
+          const CardIcon = meta.icon;
+
           return (
             <button
               key={card.id}
               type="button"
               className={`summary-kpi-card animate-in${isSelected ? ' active' : ''}`}
-              style={{ '--delay': `${80 + i * 60}ms` }}
+              style={{
+                '--delay': `${80 + i * 60}ms`,
+                '--card-accent': meta.accent,
+                '--card-glow': meta.glow,
+              }}
               onClick={() => setGraphMetric(card.id)}
             >
               <div className="card-top">
-                <span className="card-icon">{card.icon}</span>
+                <div className="card-icon-wrap">
+                  <CardIcon size={18} />
+                </div>
                 <span className="card-label">{card.label}</span>
                 {isSelected && <span className="active-dot-indicator" />}
               </div>
               <div className="card-value">{card.value}</div>
               <div className="card-sub">{card.sub}</div>
-              <div className="card-click-hint">Click to focus graph ↓</div>
+              <div className={`card-trend-badge ${meta.trendType}`}>
+                {meta.trendType === 'positive' && <TrendingUp size={11} />}
+                {meta.trendType === 'negative' && <TrendingDown size={11} />}
+                <span>{meta.trend}</span>
+              </div>
+              <div className="card-click-hint">
+                <span>Focus graph</span>
+                <ArrowRight size={12} />
+              </div>
             </button>
           );
         })}
@@ -187,8 +291,9 @@ export default function DashboardPage({
         <div className="studio-header">
           <div className="studio-title-col">
             <div className="studio-badge">Interactive Forecast Studio</div>
-            <h2 className="studio-title">
-              {activeView.icon} {activeView.label} Trajectory ({graphSpan} Months)
+            <h2 className="studio-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ActiveIcon size={22} color={activeView.color} />
+              <span>{activeView.label} Trajectory ({graphSpan} Months)</span>
             </h2>
           </div>
 
@@ -216,7 +321,8 @@ export default function DashboardPage({
                 onClick={() => setGraphType('bar')}
                 title="Bar Chart"
               >
-                ■ Bars
+                <BarChart3 size={14} />
+                <span>Bars</span>
               </button>
               <button
                 type="button"
@@ -224,7 +330,8 @@ export default function DashboardPage({
                 onClick={() => setGraphType('line')}
                 title="Line Chart"
               >
-                ▰ Line
+                <LineChartIcon size={14} />
+                <span>Line</span>
               </button>
               <button
                 type="button"
@@ -232,7 +339,8 @@ export default function DashboardPage({
                 onClick={() => setGraphType('pie')}
                 title="Pie Breakdown"
               >
-                🥧 Pie Breakdown
+                <PieChartIcon size={14} />
+                <span>Pie Breakdown</span>
               </button>
             </div>
           </div>
@@ -264,16 +372,7 @@ export default function DashboardPage({
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip
-                      formatter={(val) => currency(val)}
-                      contentStyle={{
-                        backgroundColor: 'var(--tooltip-bg, #080e20)',
-                        borderColor: 'var(--tooltip-border, rgba(124,58,237,0.4))',
-                        borderRadius: '12px',
-                        color: '#f0f4ff',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                      }}
-                    />
+                    <Tooltip content={<CustomGlassTooltip />} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -291,22 +390,14 @@ export default function DashboardPage({
               <BarChart data={forecast} margin={{ top: 20, right: 20, left: 15, bottom: 5 }}>
                 <defs>
                   <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={activeView.color} stopOpacity={0.9} />
-                    <stop offset="100%" stopColor={activeView.color} stopOpacity={0.4} />
+                    <stop offset="0%" stopColor={activeView.color} stopOpacity={0.92} />
+                    <stop offset="100%" stopColor={activeView.color} stopOpacity={0.2} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="var(--border-subtle, rgba(255,255,255,0.08))" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="month" stroke="var(--text-muted, #94a3b8)" tickLine={false} />
                 <YAxis stroke="var(--text-muted, #94a3b8)" tickFormatter={(v) => currency(v)} width={80} tickLine={false} />
-                <Tooltip
-                  formatter={(v) => currency(v)}
-                  contentStyle={{
-                    backgroundColor: 'var(--tooltip-bg, #0f172a)',
-                    borderColor: 'var(--tooltip-border, rgba(255,255,255,0.15))',
-                    borderRadius: '10px',
-                    color: '#fff',
-                  }}
-                />
+                <Tooltip content={<CustomGlassTooltip />} />
                 <Legend />
                 <Bar
                   dataKey={graphMetric}
@@ -322,15 +413,7 @@ export default function DashboardPage({
                 <CartesianGrid stroke="var(--border-subtle, rgba(255,255,255,0.08))" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="month" stroke="var(--text-muted, #94a3b8)" tickLine={false} />
                 <YAxis stroke="var(--text-muted, #94a3b8)" tickFormatter={(v) => currency(v)} width={80} tickLine={false} />
-                <Tooltip
-                  formatter={(v) => currency(v)}
-                  contentStyle={{
-                    backgroundColor: 'var(--tooltip-bg, #0f172a)',
-                    borderColor: 'var(--tooltip-border, rgba(255,255,255,0.15))',
-                    borderRadius: '10px',
-                    color: '#fff',
-                  }}
-                />
+                <Tooltip content={<CustomGlassTooltip />} />
                 <Legend />
                 <Line
                   type="monotone"
@@ -352,7 +435,9 @@ export default function DashboardPage({
         {/* Latest AI Twin Explainability Strip */}
         <div className="panel insight-panel">
           <div className="insight-header">
-            <span className="insight-badge-icon">💡</span>
+            <span className="insight-badge-icon">
+              <Sparkles size={16} color="#A78BFA" />
+            </span>
             <div>
               <h3>{latestInsight?.title || 'Financial Twin Outlook'}</h3>
               <span className="engine-source-pill">ExplainabilityEngine Active</span>
@@ -367,7 +452,8 @@ export default function DashboardPage({
               className="chat-jump-btn"
               onClick={() => navigate('/chat')}
             >
-              Open in AI Chat Studio →
+              <span>Open in AI Chat Studio</span>
+              <ArrowRight size={14} />
             </button>
           </div>
         </div>
@@ -375,7 +461,9 @@ export default function DashboardPage({
         {/* Multi-Agent Quick Jump Card */}
         <div className="panel agent-preview-panel">
           <div className="agent-preview-header">
-            <span className="agent-badge-icon">🧠</span>
+            <span className="agent-badge-icon">
+              <Cpu size={18} color="#38BDF8" />
+            </span>
             <div>
               <h3>Autonomous 4-Agent Consensus</h3>
               <span className="agent-sub">Real-time financial audits</span>
@@ -384,28 +472,36 @@ export default function DashboardPage({
 
           <div className="agent-mini-cards">
             <div className="mini-agent-row">
-              <span className="mini-icon">💸</span>
+              <span className="mini-icon">
+                <TrendingDown size={15} color="#FB7185" />
+              </span>
               <div className="mini-info">
                 <strong>Spending Agent:</strong>
                 <span>{savingsRate > 20 ? 'Controlled burn rate' : 'Elevated spending pressure'}</span>
               </div>
             </div>
             <div className="mini-agent-row">
-              <span className="mini-icon">💰</span>
+              <span className="mini-icon">
+                <TrendingUp size={15} color="#34D399" />
+              </span>
               <div className="mini-info">
                 <strong>Investment Agent:</strong>
                 <span>{currency(profile.savings || 0)} monthly investable surplus</span>
               </div>
             </div>
             <div className="mini-agent-row">
-              <span className="mini-icon">🛡️</span>
+              <span className="mini-icon">
+                <ShieldCheck size={15} color="#38BDF8" />
+              </span>
               <div className="mini-info">
                 <strong>Risk Agent:</strong>
                 <span>DTI {dti}% • Prime score {profile.creditScore || 750}</span>
               </div>
             </div>
             <div className="mini-agent-row">
-              <span className="mini-icon">🎯</span>
+              <span className="mini-icon">
+                <Target size={15} color="#A78BFA" />
+              </span>
               <div className="mini-info">
                 <strong>Goal Agent:</strong>
                 <span>12M milestone trajectory positive</span>
@@ -418,7 +514,8 @@ export default function DashboardPage({
             className="secondary-button wide"
             onClick={() => navigate('/agents')}
           >
-            Explore Multi-Agent Intelligence Hub →
+            <span>Explore Multi-Agent Intelligence Hub</span>
+            <ArrowRight size={15} />
           </button>
         </div>
       </div>

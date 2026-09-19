@@ -14,12 +14,32 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import {
+  Bot,
+  User,
+  Search,
+  Sparkles,
+  Clock,
+  Send,
+  TrendingUp,
+  TrendingDown,
+  Landmark,
+  BarChart3,
+  LineChart as LineChartIcon,
+  PieChart as PieChartIcon,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
+  Trash2,
+  ArrowRight,
+} from 'lucide-react';
 
 const graphViews = [
-  { id: 'expense', label: 'Expenses', color: '#EF4444', icon: '💸' },
-  { id: 'income', label: 'Income', color: '#10B981', icon: '💰' },
-  { id: 'savings', label: 'Savings', color: '#6366F1', icon: '🏦' },
-  { id: 'netWorth', label: 'Net Worth', color: '#06B6D4', icon: '💎' },
+  { id: 'expense', label: 'Expenses', color: '#FB7185', icon: TrendingDown },
+  { id: 'income', label: 'Income', color: '#34D399', icon: TrendingUp },
+  { id: 'savings', label: 'Savings', color: '#A78BFA', icon: Landmark },
+  { id: 'netWorth', label: 'Net Worth', color: '#38BDF8', icon: Sparkles },
 ];
 
 const spanOptions = [6, 12, 24, 36, 60];
@@ -39,6 +59,28 @@ function currency(value) {
     currency: 'INR',
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function CustomGlassTooltip({ active, payload, label }) {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    return (
+      <div className="custom-glass-tooltip">
+        <div className="tooltip-month">{label || data.name}</div>
+        <div className="tooltip-row">
+          <span
+            className="tooltip-indicator"
+            style={{ backgroundColor: data.color || data.fill || '#A78BFA' }}
+          />
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 500 }}>
+            {data.name || 'Value'}:
+          </span>
+          <span>{currency(data.value)}</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
 }
 
 function InlineChart({ data, metric, type, color, span }) {
@@ -61,23 +103,14 @@ function InlineChart({ data, metric, type, color, span }) {
             tick={{ fontSize: 10 }}
             hide={!showYAxis}
           />
-          <Tooltip
-            formatter={(v) => currency(v)}
-            contentStyle={{
-              backgroundColor: 'var(--tooltip-bg, #080e20)',
-              borderColor: 'var(--tooltip-border, rgba(255,215,0,0.4))',
-              borderRadius: '8px',
-              color: '#f0f4ff',
-              fontSize: '11px',
-            }}
-          />
+          <Tooltip content={<CustomGlassTooltip />} />
           <Line
             type="monotone"
             dataKey={metric}
             stroke={color}
-            strokeWidth={2}
+            strokeWidth={2.5}
             dot={false}
-            activeDot={{ r: 4, fill: color }}
+            activeDot={{ r: 5, fill: color }}
           />
         </LineChart>
       ) : (
@@ -92,16 +125,7 @@ function InlineChart({ data, metric, type, color, span }) {
             tick={{ fontSize: 10 }}
             hide={!showYAxis}
           />
-          <Tooltip
-            formatter={(v) => currency(v)}
-            contentStyle={{
-              backgroundColor: 'var(--tooltip-bg, #080e20)',
-              borderColor: 'var(--tooltip-border, rgba(255,215,0,0.4))',
-              borderRadius: '8px',
-              color: '#f0f4ff',
-              fontSize: '11px',
-            }}
-          />
+          <Tooltip content={<CustomGlassTooltip />} />
           <Bar
             dataKey={metric}
             fill={color}
@@ -137,7 +161,8 @@ export default function ChatPage({
   latestInsight,
 }) {
   const [searchHistory, setSearchHistory] = useState('');
-  const [activeRightTab, setActiveRightTab] = useState('chart'); // 'chart', 'breakdown', 'metrics'
+  const [hideLeft, setHideLeft] = useState(false);
+  const [hideRight, setHideRight] = useState(false);
   const messagesEndRef = useRef(null);
 
   const activeView = graphViews.find((v) => v.id === graphMetric) || graphViews[0];
@@ -174,13 +199,19 @@ export default function ChatPage({
 
   return (
     <div className="page-container chat-studio-page">
-      {/* Three Column Chat Studio Workspace */}
-      <div className="chat-studio-layout">
+      {/* Three Column Chat Studio Workspace with Responsive Collapsible Columns */}
+      <div
+        className={`chat-studio-layout ${
+          hideLeft && hideRight ? 'hide-both' : hideLeft ? 'hide-left' : hideRight ? 'hide-right' : ''
+        }`}
+      >
         {/* ================= LEFT COLUMN: HISTORY & PROMPTS ================= */}
-        <aside className="chat-history-sidebar panel">
+        <aside className={`chat-history-sidebar panel ${hideLeft ? 'collapsed' : ''}`}>
           <div className="sidebar-top">
             <div className="sidebar-heading-row">
-              <span className="sidebar-icon">📜</span>
+              <span className="sidebar-icon">
+                <Clock size={16} color="#A78BFA" />
+              </span>
               <h3>Conversation History</h3>
             </div>
             {chat.length > 0 && (
@@ -190,14 +221,17 @@ export default function ChatPage({
                 onClick={clearChat}
                 title="Clear all conversation messages"
               >
-                Clear
+                <Trash2 size={12} />
+                <span>Clear</span>
               </button>
             )}
           </div>
 
           {/* Search bar */}
           <div className="history-search-wrap">
-            <span className="search-ico">🔍</span>
+            <span className="search-ico">
+              <Search size={14} />
+            </span>
             <input
               type="text"
               placeholder="Search conversations..."
@@ -210,7 +244,9 @@ export default function ChatPage({
           <div className="history-items-container">
             {filteredHistory.length === 0 ? (
               <div className="history-empty">
-                <span className="empty-ico">💬</span>
+                <span className="empty-ico">
+                  <Clock size={24} color="var(--text-muted)" />
+                </span>
                 <p>{searchHistory ? 'No matching queries' : 'No chat history yet'}</p>
                 <span className="history-empty-sub">Ask a question below to start</span>
               </div>
@@ -223,7 +259,9 @@ export default function ChatPage({
                   onClick={() => setQuestion(msg.text)}
                   title="Click to reload this query"
                 >
-                  <span className="query-avatar">👤</span>
+                  <span className="query-avatar">
+                    <User size={13} />
+                  </span>
                   <span className="query-text">{msg.text}</span>
                 </button>
               ))
@@ -233,7 +271,9 @@ export default function ChatPage({
           {/* Preset Prompts Section */}
           <div className="suggested-prompts-section">
             <div className="prompts-title">
-              <span className="prompts-icon">💡</span>
+              <span className="prompts-icon">
+                <Sparkles size={14} color="#FB923C" />
+              </span>
               <span>Suggested Twin Queries</span>
             </div>
             <div className="prompts-chips-list">
@@ -253,24 +293,46 @@ export default function ChatPage({
 
         {/* ================= CENTER COLUMN: CONVERSATION STREAM ================= */}
         <main className="chat-feed-center panel">
-          {/* Feed Header */}
+          {/* Feed Header with Sidebar Toggles */}
           <div className="chat-feed-header">
             <div className="feed-header-meta">
-              <div className="bot-pulse-avatar">🤖</div>
-              <div>
+              <button
+                type="button"
+                className={`sidebar-toggle-btn ${!hideLeft ? 'active' : ''}`}
+                onClick={() => setHideLeft(!hideLeft)}
+                title={hideLeft ? 'Expand History Sidebar' : 'Collapse History Sidebar'}
+              >
+                {hideLeft ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+                <span className="desktop-only">History</span>
+              </button>
+
+              <div className="bot-pulse-avatar">
+                <Bot size={20} />
+              </div>
+              <div className="feed-header-text">
                 <h2 className="feed-title">FinTwin AI Advisor</h2>
                 <div className="feed-status-row">
                   <span className={`status-dot ${backendOnline === true ? 'online' : 'ready'}`} />
                   <span className="feed-status-text">
-                    {backendOnline === true ? 'Connected to FastAPI Multi-Agent Engine' : 'Resilient Local Twin Engine'}
+                    {backendOnline === true ? 'FastAPI Engine' : 'Local Twin (XGBoost)'}
                   </span>
                 </div>
               </div>
             </div>
 
             <div className="feed-header-chips">
-              <span className="engine-badge">Model: XGBoost + Explainability</span>
-              <span className="months-badge">{months.length} Months Tracked</span>
+              <span className="months-badge desktop-only">{months.length}M Tracked</span>
+
+              <button
+                type="button"
+                className={`sidebar-toggle-btn ${!hideRight ? 'active' : ''}`}
+                onClick={() => setHideRight(!hideRight)}
+                title={hideRight ? 'Expand Forecast Panel' : 'Collapse Forecast Panel'}
+              >
+                <BarChart3 size={14} />
+                <span className="desktop-only">Forecast</span>
+                {hideRight ? <PanelRightOpen size={14} /> : <PanelRightClose size={14} />}
+              </button>
             </div>
           </div>
 
@@ -278,7 +340,9 @@ export default function ChatPage({
           <div className="chat-messages-stream" ref={streamRef}>
             {chat.length === 0 ? (
               <div className="chat-stream-welcome">
-                <div className="welcome-emblem">🧬</div>
+                <div className="welcome-emblem">
+                  <Sparkles size={34} color="#A78BFA" />
+                </div>
                 <h3>Welcome to your AI Financial Twin Studio</h3>
                 <p>
                   I analyze your monthly income, expenditure drift, debt burden, and milestone horizons with explainable AI.
@@ -291,7 +355,9 @@ export default function ChatPage({
                       className="welcome-prompt-card"
                       onClick={() => setQuestion(q)}
                     >
-                      <span className="card-arrow">→</span>
+                      <span className="card-arrow">
+                        <ArrowRight size={14} />
+                      </span>
                       <span>{q}</span>
                     </button>
                   ))}
@@ -305,12 +371,14 @@ export default function ChatPage({
                   style={{ '--delay': `${Math.min(index * 30, 200)}ms` }}
                 >
                   <div className="message-avatar">
-                    {msg.role === 'user' ? '👤' : '🤖'}
+                    {msg.role === 'user' ? <User size={15} /> : <Bot size={16} />}
                   </div>
                   <div className={`chat-message-bubble ${msg.role}`}>
                     {msg.title && (
                       <div className="bubble-header-tag">
-                        <span className="tag-icon">⚡</span>
+                        <span className="tag-icon">
+                          <Sparkles size={12} />
+                        </span>
                         <span>{msg.title}</span>
                       </div>
                     )}
@@ -339,7 +407,9 @@ export default function ChatPage({
 
             {loading && (
               <div className="chat-bubble-row assistant-side">
-                <div className="message-avatar">🤖</div>
+                <div className="message-avatar">
+                  <Bot size={16} />
+                </div>
                 <div className="chat-message-bubble assistant loading-bubble">
                   <span className="typing-dot" />
                   <span className="typing-dot" />
@@ -381,16 +451,18 @@ export default function ChatPage({
               disabled={loading || !question.trim()}
             >
               <span>Ask Twin</span>
-              <span className="send-arrow">➤</span>
+              <Send size={14} />
             </button>
           </form>
         </main>
 
         {/* ================= RIGHT COLUMN: SYNCHRONIZED CHARTS ================= */}
-        <aside className="chat-charts-sidebar panel">
+        <aside className={`chat-charts-sidebar panel ${hideRight ? 'collapsed' : ''}`}>
           <div className="charts-sidebar-top">
             <div className="charts-sidebar-title">
-              <span className="charts-icon">📊</span>
+              <span className="charts-icon">
+                <BarChart3 size={18} color="#38BDF8" />
+              </span>
               <div>
                 <h3>Synchronized Forecast</h3>
                 <span className="charts-sub">Adapts in real-time to chat topics</span>
@@ -403,55 +475,61 @@ export default function ChatPage({
                 className={`tab-btn ${graphType === 'bar' ? 'active' : ''}`}
                 onClick={() => setGraphType('bar')}
               >
-                Bars
+                <BarChart3 size={13} />
+                <span>Bars</span>
               </button>
               <button
                 type="button"
                 className={`tab-btn ${graphType === 'line' ? 'active' : ''}`}
                 onClick={() => setGraphType('line')}
               >
-                Line
+                <LineChartIcon size={13} />
+                <span>Line</span>
               </button>
               <button
                 type="button"
                 className={`tab-btn ${graphType === 'pie' ? 'active' : ''}`}
                 onClick={() => setGraphType('pie')}
               >
-                Pie
+                <PieChartIcon size={13} />
+                <span>Pie</span>
               </button>
             </div>
           </div>
 
           {/* Metric Selector Pills */}
           <div className="metric-pills-row">
-            {graphViews.map((v) => (
-              <button
-                key={v.id}
-                type="button"
-                className={`metric-pill ${graphMetric === v.id ? 'active' : ''}`}
-                onClick={() => setGraphMetric(v.id)}
-                style={{ '--pill-color': v.color }}
-              >
-                <span>{v.icon}</span>
-                <span>{v.label}</span>
-              </button>
-            ))}
+            {graphViews.map((v) => {
+              const MetricIcon = v.icon;
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  className={`metric-pill ${graphMetric === v.id ? 'active' : ''}`}
+                  onClick={() => setGraphMetric(v.id)}
+                  style={{ '--pill-color': v.color }}
+                >
+                  <MetricIcon size={13} />
+                  <span>{v.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Horizon Selector */}
           <div className="span-selector-row">
             <span className="span-label">Projection Horizon:</span>
             <div className="span-pills">
-{spanOptions.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    className={`span-pill ${graphSpan === opt ? 'active' : ''}`}
-                    onClick={() => setGraphSpan(opt)}
-                  >
-                    {opt >= 12 && opt % 12 === 0 ? `${opt / 12}Y` : `${opt}M`}
-                  </button>
-                ))}
+              {spanOptions.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  className={`span-pill ${graphSpan === opt ? 'active' : ''}`}
+                  onClick={() => setGraphSpan(opt)}
+                >
+                  {opt >= 12 && opt % 12 === 0 ? `${opt / 12}Y` : `${opt}M`}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -476,7 +554,7 @@ export default function ChatPage({
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(v) => currency(v)} />
+                    <Tooltip content={<CustomGlassTooltip />} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -491,15 +569,7 @@ export default function ChatPage({
                   <CartesianGrid stroke="var(--border-subtle, rgba(255,255,255,0.08))" strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="month" stroke="var(--text-muted, #94a3b8)" tickLine={false} />
                   <YAxis stroke="var(--text-muted, #94a3b8)" tickFormatter={(v) => currency(v)} width={75} tickLine={false} />
-                  <Tooltip
-                    formatter={(v) => currency(v)}
-                    contentStyle={{
-                      backgroundColor: 'var(--tooltip-bg, #080e20)',
-                      borderColor: 'var(--tooltip-border, rgba(124,58,237,0.4))',
-                      borderRadius: '12px',
-                      color: '#f0f4ff',
-                    }}
-                  />
+                  <Tooltip content={<CustomGlassTooltip />} />
                   <Bar
                     dataKey={graphMetric}
                     name={activeView.label}
@@ -514,15 +584,7 @@ export default function ChatPage({
                   <CartesianGrid stroke="var(--border-subtle, rgba(255,255,255,0.08))" strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="month" stroke="var(--text-muted, #94a3b8)" tickLine={false} />
                   <YAxis stroke="var(--text-muted, #94a3b8)" tickFormatter={(v) => currency(v)} width={75} tickLine={false} />
-                  <Tooltip
-                    formatter={(v) => currency(v)}
-                    contentStyle={{
-                      backgroundColor: 'var(--tooltip-bg, #080e20)',
-                      borderColor: 'var(--tooltip-border, rgba(124,58,237,0.4))',
-                      borderRadius: '12px',
-                      color: '#f0f4ff',
-                    }}
-                  />
+                  <Tooltip content={<CustomGlassTooltip />} />
                   <Line
                     type="monotone"
                     dataKey={graphMetric}
