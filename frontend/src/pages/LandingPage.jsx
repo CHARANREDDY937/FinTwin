@@ -20,6 +20,7 @@ import {
   simulateLocalScenario,
   evaluateLocalAgents,
 } from '../api';
+import './LandingPage.css';
 
 function currency(val) {
   return new Intl.NumberFormat('en-IN', {
@@ -128,90 +129,82 @@ export default function LandingPage({
   };
 
   return (
-    <div className="landing-page-root animate-fade-in">
+    <div className="lp-root animate-fade-in">
+      {/* ── Animated Ambient Floating Orbs ── */}
+      <div className="lp-bg" aria-hidden="true">
+        <div className="lp-orb lp-orb-1" />
+        <div className="lp-orb lp-orb-2" />
+        <div className="lp-orb lp-orb-3" />
+      </div>
+
       {/* ─────────────────────────────────────────────────────────────
-          1. Hero Section: Vibrant, Heartwarming, Inspiring
+          1. Hero Section: Vibrant, Inspiring & Clean
       ───────────────────────────────────────────────────────────── */}
-      <section className="landing-hero-section">
-        <div className="landing-hero-backdrop-glows">
-          <div className="glow-orb orb-coral" />
-          <div className="glow-orb orb-amber" />
-          <div className="glow-orb orb-mint" />
-        </div>
-
-        <div className="landing-hero-content">
-          <div className="landing-badge-pill animate-slide-up" style={{ '--delay': '50ms' }}>
-            <span className="badge-sparkle">✨</span>
-            <span className="badge-text">Autonomous Financial Digital Twin</span>
-            <span className="badge-chip-vibrant">Enterprise Intelligence</span>
-          </div>
-
-          <h1 className="landing-hero-title animate-slide-up" style={{ '--delay': '120ms' }}>
+      <section className="lp-hero">
+        <div className="lp-hero-left">
+          <h1 className="lp-title">
             Your Finances, Reimagined as an{' '}
-            <span className="gradient-text-warm">Intelligent Living Twin</span>
+            <span className="lp-title-shimmer">Intelligent Living Twin</span>
           </h1>
 
-          <p className="landing-hero-subtitle animate-slide-up" style={{ '--delay': '180ms' }}>
+          <p className="lp-subtitle">
             Transform static spreadsheets and generic budgets into a predictive, self-learning financial
             twin. Stress-test major life milestones, forecast multi-horizon wealth trajectory, and orchestrate
             4 autonomous AI specialist agents to protect every rupee.
           </p>
 
-          <div className="landing-hero-cta-group animate-slide-up" style={{ '--delay': '240ms' }}>
+          <div className="lp-cta-row">
             <button
               type="button"
-              className="vibrant-btn-primary launch-hero-btn"
+              className="lp-btn lp-btn-primary"
               onClick={handleLaunchDemo}
             >
-              <span className="btn-icon">🚀</span>
-              <span className="btn-label">Launch Live Twin Studio</span>
-              <span className="btn-arrow">→</span>
+              <span>🚀</span>
+              <span>Launch Live Twin Studio</span>
+              <span className="lp-btn-arrow">→</span>
             </button>
 
             <button
               type="button"
-              className="vibrant-btn-secondary"
+              className="lp-btn lp-btn-secondary"
               onClick={() => {
                 const el = document.getElementById('interactive-sandbox-section');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
             >
-              <span className="btn-icon">⚡</span>
+              <span>⚡</span>
               <span>Test What-If Simulator Below</span>
             </button>
 
             <button
               type="button"
-              className="vibrant-btn-ghost"
+              className="lp-btn lp-btn-ghost"
               onClick={() => navigate('/login')}
             >
-              <span className="btn-icon">🔑</span>
+              <span>🔑</span>
               <span>{user ? `Signed in as ${user.name}` : 'Sign In / Account'}</span>
             </button>
           </div>
 
-          {/* Social Proof & Quick Metrics Strip */}
-          <div className="landing-metrics-strip animate-slide-up" style={{ '--delay': '300ms' }}>
-            <div className="metric-pill-item">
-              <span className="pill-dot mint-dot" />
+          {/* Social Proof & Quick Metrics Capsule */}
+          <div className="lp-metrics">
+            <div className="lp-metric">
+              <span className="lp-metric-dot" style={{ background: 'var(--color-sage)' }} />
               <strong>94.8%</strong>
               <span>Forecast Precision</span>
             </div>
-            <div className="metric-strip-divider" />
-            <div className="metric-pill-item">
-              <span className="pill-dot coral-dot" />
+            <div className="lp-metric">
+              <span className="lp-metric-dot" style={{ background: 'var(--color-apricot)' }} />
               <strong>4 Autonomous</strong>
               <span>Domain AI Agents</span>
             </div>
-            <div className="metric-strip-divider" />
-            <div className="metric-pill-item">
-              <span className="pill-dot amber-dot" />
+            <div className="lp-metric">
+              <span className="lp-metric-dot" style={{ background: 'var(--color-amber)' }} />
               <strong>Zero Black-Box</strong>
               <span>100% Explainable Math</span>
             </div>
-            <div className="metric-strip-divider" />
-            <div className="metric-pill-item">
-              <span className="pill-dot violet-dot" />
+            <div className="lp-metric">
+              <span className="lp-metric-dot" style={{ background: 'var(--color-lavender)' }} />
               <strong>12M to 60M</strong>
               <span>Multi-Horizon Simulation</span>
             </div>
@@ -219,16 +212,16 @@ export default function LandingPage({
         </div>
 
         {/* Hero Interactive Floating Preview Card */}
-        <div className="landing-hero-visual-card animate-slide-up" style={{ '--delay': '200ms' }}>
-          <div className="visual-card-header">
-            <div className="card-header-left">
-              <div className="pulsing-status-dot" />
-              <span className="card-header-title">Live Digital Twin Physiology</span>
+        <div className="lp-hero-card">
+          <div className="lp-card-header">
+            <div className="lp-card-title">
+              <span className="lp-status-dot" />
+              <span>Live Digital Twin Physiology</span>
             </div>
-            <span className="card-badge-soft">Ground-Truth Calibrated</span>
+            <span className="lp-card-badge">Ground-Truth Calibrated</span>
           </div>
 
-          <div className="visual-card-body">
+          <div className="lp-card-body">
             <div className="visual-gauge-col">
               <FinancialHealthGauge
                 score={healthScore}
@@ -238,32 +231,32 @@ export default function LandingPage({
               />
             </div>
 
-            <div className="visual-stats-col">
-              <div className="mini-vital-tile">
-                <span className="vital-label">Monthly Retained Surplus</span>
-                <strong className="vital-value text-emerald">{currency(profile.savings || 35000)}</strong>
-                <span className="vital-trend positive">↑ 12.4% above baseline</span>
+            <div className="lp-stats-col">
+              <div className="lp-stat-tile">
+                <span className="lp-stat-label">Monthly Retained Surplus</span>
+                <strong className="lp-stat-value" style={{ color: 'var(--color-sage)' }}>{currency(profile.savings || 35000)}</strong>
+                <span className="lp-stat-trend pos">↑ 12.4% above baseline</span>
               </div>
 
-              <div className="mini-vital-tile">
-                <span className="vital-label">Debt-to-Income (DTI)</span>
-                <strong className="vital-value text-amber">{profile.income ? Math.round((profile.emi / profile.income) * 100) : 26}%</strong>
-                <span className="vital-trend safe">✓ Healthy debt ceiling (&lt; 35%)</span>
+              <div className="lp-stat-tile">
+                <span className="lp-stat-label">Debt-to-Income (DTI)</span>
+                <strong className="lp-stat-value" style={{ color: 'var(--color-apricot)' }}>{profile.income ? Math.round((profile.emi / profile.income) * 100) : 26}%</strong>
+                <span className="lp-stat-trend warn">✓ Healthy debt ceiling (&lt; 35%)</span>
               </div>
 
-              <div className="mini-vital-tile">
-                <span className="vital-label">Prime Credit Resilience</span>
-                <strong className="vital-value text-coral">{profile.creditScore || 775} / 900</strong>
-                <span className="vital-trend positive">★ Tier-1 Borrower Grade</span>
+              <div className="lp-stat-tile">
+                <span className="lp-stat-label">Prime Credit Resilience</span>
+                <strong className="lp-stat-value" style={{ color: 'var(--color-lavender)' }}>{profile.creditScore || 775} / 900</strong>
+                <span className="lp-stat-trend pos">★ Tier-1 Borrower Grade</span>
               </div>
             </div>
           </div>
 
-          <div className="visual-card-footer">
-            <span className="footer-twin-hint">💡 ExplainabilityEngine: Compounding surplus covers debt drag with 3.8x safety multiplier.</span>
+          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>💡 ExplainabilityEngine: Compounding surplus covers debt drag with 3.8x safety multiplier.</span>
             <button
               type="button"
-              className="footer-jump-btn"
+              className="lp-agent-link"
               onClick={() => navigate('/dashboard')}
             >
               Open Dashboard →
@@ -273,40 +266,38 @@ export default function LandingPage({
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. Interactive What-If Sandbox: Embedded Right on Landing Page!
+          2. Interactive What-If Sandbox: Embedded Right on Landing Page
       ───────────────────────────────────────────────────────────── */}
-      <section id="interactive-sandbox-section" className="landing-section sandbox-section">
-        <div className="section-header-center">
-          <div className="section-pill-tag">
-            <span>⚡ Interactive What-If Simulator</span>
-          </div>
-          <h2 className="section-headline">
-            Stress-Test Your Financial Future <span className="gradient-text-warm">Before It Happens</span>
+      <section id="interactive-sandbox-section" className="lp-section">
+        <div className="lp-section-head">
+          <span className="lp-pill">⚡ Interactive What-If Simulator</span>
+          <h2 className="lp-h2">
+            Stress-Test Your Financial Future <span className="lp-h2-accent">Before It Happens</span>
           </h2>
-          <p className="section-subtext">
+          <p className="lp-section-sub">
             Play with live macroeconomic shocks, career changes, or real estate down-payments right here.
             Watch the twin dynamically recompute wealth curves and explain the trade-offs.
           </p>
         </div>
 
-        <div className="sandbox-interactive-card">
+        <div className="lp-sandbox">
           {/* Controls Bar */}
-          <div className="sandbox-toolbar">
+          <div className="lp-sandbox-toolbar">
             {/* Scenario Preset Selector */}
-            <div className="toolbar-segment">
-              <span className="segment-label">Select Shock Scenario:</span>
-              <div className="preset-chips-row">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Select Shock Scenario:</span>
+              <div className="lp-chip-row">
                 {Object.values(SCENARIO_PRESETS).map((preset) => {
                   const isSelected = selectedScenarioKey === preset.id;
                   return (
                     <button
                       key={preset.id}
                       type="button"
-                      className={`preset-chip-btn ${isSelected ? 'active' : ''}`}
+                      className={`lp-chip ${isSelected ? 'is-active' : ''}`}
                       onClick={() => setSelectedScenarioKey(preset.id)}
                     >
-                      <span className="chip-icon">{preset.icon}</span>
-                      <span className="chip-name">{preset.name.split(' ')[0]}</span>
+                      <span>{preset.icon}</span>
+                      <span>{preset.name.split(' ')[0]}</span>
                     </button>
                   );
                 })}
@@ -314,15 +305,15 @@ export default function LandingPage({
             </div>
 
             {/* Horizon & Metric */}
-            <div className="toolbar-segment-group">
-              <div className="toolbar-segment">
-                <span className="segment-label">Horizon:</span>
-                <div className="pill-toggle-group">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Horizon:</span>
+                <div className="lp-toggle-group">
                   {[6, 12, 24, 36].map((span) => (
                     <button
                       key={span}
                       type="button"
-                      className={`pill-toggle-btn ${selectedHorizon === span ? 'active' : ''}`}
+                      className={`lp-toggle-btn ${selectedHorizon === span ? 'is-active' : ''}`}
                       onClick={() => setSelectedHorizon(span)}
                     >
                       {span}M
@@ -331,9 +322,9 @@ export default function LandingPage({
                 </div>
               </div>
 
-              <div className="toolbar-segment">
-                <span className="segment-label">Metric:</span>
-                <div className="pill-toggle-group">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Metric:</span>
+                <div className="lp-toggle-group">
                   {[
                     { id: 'netWorth', label: 'Net Worth' },
                     { id: 'savings', label: 'Monthly Surplus' },
@@ -342,7 +333,7 @@ export default function LandingPage({
                     <button
                       key={m.id}
                       type="button"
-                      className={`pill-toggle-btn ${selectedMetric === m.id ? 'active' : ''}`}
+                      className={`lp-toggle-btn ${selectedMetric === m.id ? 'is-active' : ''}`}
                       onClick={() => setSelectedMetric(m.id)}
                     >
                       {m.label}
@@ -354,23 +345,23 @@ export default function LandingPage({
           </div>
 
           {/* Active Preset Description Banner */}
-          <div className="preset-active-banner">
-            <div className="preset-active-info">
-              <span className="preset-active-icon">{activePreset.icon}</span>
+          <div className="lp-sandbox-banner">
+            <div className="lp-sandbox-banner-left">
+              <span className="lp-sandbox-icon">{activePreset.icon}</span>
               <div>
                 <h4>{activePreset.name}</h4>
                 <p>{activePreset.description}</p>
               </div>
             </div>
-            <div className="preset-shocks-strip">
+            <div className="lp-shock-strip">
               {activePreset.incomeShock !== 0 && (
-                <span className="shock-tag income">Income {(activePreset.incomeShock * 100).toFixed(0)}%</span>
+                <span className="lp-shock income">Income {(activePreset.incomeShock * 100).toFixed(0)}%</span>
               )}
               {activePreset.expenseShock !== 0 && (
-                <span className="shock-tag expense">Outflow +{(activePreset.expenseShock * 100).toFixed(0)}%</span>
+                <span className="lp-shock expense">Outflow +{(activePreset.expenseShock * 100).toFixed(0)}%</span>
               )}
               {activePreset.debtShock !== 0 && (
-                <span className="shock-tag debt">Debt +{(activePreset.debtShock * 100).toFixed(0)}%</span>
+                <span className="lp-shock debt">Debt +{(activePreset.debtShock * 100).toFixed(0)}%</span>
               )}
             </div>
           </div>
@@ -387,37 +378,37 @@ export default function LandingPage({
             </div>
 
             <ResponsiveContainer width="100%" height={340}>
-              <AreaChart data={sandboxChartData} margin={{ top: 15, right: 20, left: 15, bottom: 5 }}>
+              <AreaChart data={sandboxChartData} margin={{ top: 15, right: 20, left: 15, bottom: 28 }}>
                 <defs>
                   <linearGradient id="warmBaselineGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FF9966" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#FF9966" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="warmScenarioGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FF5E62" stopOpacity={0.5} />
-                    <stop offset="95%" stopColor="#FF5E62" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#FB923C" stopOpacity={0.45} />
+                    <stop offset="95%" stopColor="#FB923C" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="var(--border-subtle, rgba(0,0,0,0.06))" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" stroke="var(--text-muted, #7c7484)" tickLine={false} tick={{ fontSize: 12 }} />
-                <YAxis stroke="var(--text-muted, #7c7484)" tickFormatter={(v) => currency(v)} width={84} tickLine={false} tick={{ fontSize: 11 }} />
+                <CartesianGrid stroke="var(--border-subtle, rgba(255,255,255,0.06))" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="month" stroke="var(--text-muted, #94A3B8)" tickLine={false} tick={{ fontSize: 12 }} dy={6} />
+                <YAxis stroke="var(--text-muted, #94A3B8)" tickFormatter={(v) => currency(v)} width={84} tickLine={false} tick={{ fontSize: 11 }} />
                 <Tooltip
                   formatter={(val, name) => [
                     currency(val),
                     name === 'baseline' ? 'Baseline Path' : `${activePreset.name} Path`,
                   ]}
                   contentStyle={{
-                    backgroundColor: 'var(--bg-surface-solid, #ffffff)',
-                    borderColor: 'var(--border-coral, #FF5E62)',
-                    borderRadius: '14px',
-                    color: 'var(--text-primary, #1e1926)',
-                    boxShadow: '0 12px 36px rgba(255, 94, 98, 0.15)',
+                    backgroundColor: 'var(--bg-surface, #0E1424)',
+                    borderColor: 'var(--border-medium, rgba(255,255,255,0.14))',
+                    borderRadius: '12px',
+                    color: 'var(--text-primary, #F8FAFC)',
+                    boxShadow: 'var(--shadow-md, 0 12px 32px rgba(0, 0, 0, 0.4))',
                   }}
                 />
                 <Area
                   type="monotone"
                   dataKey="baseline"
-                  stroke="#FF9966"
+                  stroke="#8B5CF6"
                   strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#warmBaselineGrad)"
@@ -426,8 +417,8 @@ export default function LandingPage({
                 <Area
                   type="monotone"
                   dataKey="scenario"
-                  stroke="#FF5E62"
-                  strokeWidth={3.5}
+                  stroke="#FB923C"
+                  strokeWidth={3}
                   strokeDasharray={selectedScenarioKey === 'baseline' ? '' : '5 5'}
                   fillOpacity={1}
                   fill="url(#warmScenarioGrad)"
@@ -438,40 +429,40 @@ export default function LandingPage({
           </div>
 
           {/* Impact Delta KPI Strip */}
-          <div className="sandbox-impact-strip">
-            <div className={`impact-summary-box ${netWorthDelta >= 0 ? 'positive' : 'negative'}`}>
-              <span className="impact-box-label">Net Worth Delta ({selectedHorizon}M)</span>
-              <strong className="impact-box-val">
+          <div className="lp-impact-grid">
+            <div className={`lp-impact ${netWorthDelta >= 0 ? 'pos' : 'neg'}`}>
+              <span className="lp-impact-label">Net Worth Delta ({selectedHorizon}M)</span>
+              <strong className="lp-impact-value">
                 {netWorthDelta >= 0 ? '+' : ''}{currency(netWorthDelta)}
               </strong>
-              <span className="impact-box-desc">
+              <span className="lp-impact-desc">
                 {netWorthDelta >= 0 ? 'Positive asset accumulation above baseline' : 'Capital erosion due to simulated shock'}
               </span>
             </div>
 
-            <div className={`impact-summary-box ${savingsShift >= 0 ? 'positive' : 'negative'}`}>
-              <span className="impact-box-label">Monthly Surplus Shift</span>
-              <strong className="impact-box-val">
+            <div className={`lp-impact ${savingsShift >= 0 ? 'pos' : 'neg'}`}>
+              <span className="lp-impact-label">Monthly Surplus Shift</span>
+              <strong className="lp-impact-value">
                 {savingsShift >= 0 ? '+' : ''}{currency(savingsShift)} / mo
               </strong>
-              <span className="impact-box-desc">Recurring liquid compounding variance</span>
+              <span className="lp-impact-desc">Recurring liquid compounding variance</span>
             </div>
 
-            <div className="impact-summary-box highlight">
-              <span className="impact-box-label">Macro Model Confidence</span>
-              <strong className="impact-box-val text-coral">94.8%</strong>
-              <span className="impact-box-desc">Calibrated with gradient boosted tree modeling</span>
+            <div className="lp-impact hl">
+              <span className="lp-impact-label">Macro Model Confidence</span>
+              <strong className="lp-impact-value" style={{ color: 'var(--color-apricot)' }}>94.8%</strong>
+              <span className="lp-impact-desc">Calibrated with gradient boosted tree modeling</span>
             </div>
           </div>
 
-          <div className="sandbox-footer-action">
+          <div style={{ textAlign: 'center', marginTop: '10px' }}>
             <button
               type="button"
-              className="vibrant-btn-primary"
+              className="lp-btn lp-btn-primary"
               onClick={() => navigate('/scenarios')}
             >
               <span>Explore Full Scenario Studio with 8+ Life Presets</span>
-              <span className="btn-arrow">→</span>
+              <span className="lp-btn-arrow">→</span>
             </button>
           </div>
         </div>
@@ -480,58 +471,49 @@ export default function LandingPage({
       {/* ─────────────────────────────────────────────────────────────
           3. The 4 Autonomous AI Specialists Showcase
       ───────────────────────────────────────────────────────────── */}
-      <section className="landing-section agents-showcase-section">
-        <div className="section-header-center">
-          <div className="section-pill-tag">
-            <span>🧠 Autonomous Multi-Agent Consensus</span>
-          </div>
-          <h2 className="section-headline">
-            Four Specialized AI Minds. <span className="gradient-text-warm">Zero Financial Blindspots.</span>
+      <section className="lp-section">
+        <div className="lp-section-head">
+          <span className="lp-pill">🧠 Autonomous Multi-Agent Consensus</span>
+          <h2 className="lp-h2">
+            Four Specialized AI Minds. <span className="lp-h2-accent">Zero Financial Blindspots.</span>
           </h2>
-          <p className="section-subtext">
+          <p className="lp-section-sub">
             Single-model chatbots hallucinate advice. FinTwin deploys four domain-specialist AI agents that
             concurrently audit every rupee of your cashflow from distinct perspectives.
           </p>
         </div>
 
-        <div className="agents-showcase-grid">
+        <div className="lp-agents">
           {agentsList.map((agent) => (
             <div
               key={agent.id}
-              className="agent-showcase-card animate-card-hover"
-              style={{ '--accent-color': agent.color }}
+              className="lp-agent"
+              style={{ '--accent': agent.color }}
             >
-              <div className="agent-card-top-accent" />
-              <div className="agent-header-row">
-                <div className="agent-icon-avatar">{agent.icon}</div>
-                <div className="agent-meta-col">
-                  <h3 className="agent-title">{agent.name}</h3>
-                  <span className="agent-headline-tag">{agent.headline}</span>
+              <div className="lp-agent-top">
+                <div className="lp-agent-icon">{agent.icon}</div>
+                <div className="lp-agent-meta">
+                  <h3 className="lp-agent-name">{agent.name}</h3>
+                  <span className="lp-agent-tag">{agent.headline}</span>
                 </div>
-                <div className="agent-score-circle">
+                <div className="lp-agent-score">
                   <strong>{agent.score}</strong>
                   <span>/100</span>
                 </div>
               </div>
 
-              <div className="agent-status-badge-row">
-                <span className="agent-status-pill">{agent.status}</span>
-              </div>
-
-              <div className="agent-body-text">
+              <div className="lp-agent-body">
                 <p>{agent.analysis}</p>
               </div>
 
-              <div className="agent-rec-callout">
-                <div className="rec-title">
-                  <span>💡 Prescriptive Directive:</span>
-                </div>
+              <div className="lp-agent-rec">
+                <strong>💡 Prescriptive Directive:</strong>
                 <p>{agent.recommendation}</p>
               </div>
 
               <button
                 type="button"
-                className="agent-action-jump-btn"
+                className="lp-agent-link"
                 onClick={() => navigate('/agents')}
               >
                 <span>Inspect Agent Rationale</span>
@@ -541,9 +523,9 @@ export default function LandingPage({
           ))}
         </div>
 
-        <div className="agents-consensus-banner">
-          <div className="consensus-banner-content">
-            <span className="consensus-badge">🤝 Autonomous Agent Consensus</span>
+        <div className="lp-consensus">
+          <div>
+            <span className="lp-consensus-badge">🤝 Autonomous Agent Consensus</span>
             <h3>Unified Recommendation: Optimal Compound Growth</h3>
             <p>
               The 4 agents unanimously recommend allocating 45% of monthly retained surplus (
@@ -553,7 +535,7 @@ export default function LandingPage({
           </div>
           <button
             type="button"
-            className="vibrant-btn-primary"
+            className="lp-btn lp-btn-primary"
             onClick={() => navigate('/agents')}
           >
             Open Multi-Agent Hub →
@@ -564,18 +546,18 @@ export default function LandingPage({
       {/* ─────────────────────────────────────────────────────────────
           4. Cashflow Physiology & Ground Truth Ledger
       ───────────────────────────────────────────────────────────── */}
-      <section className="landing-section physiology-section">
-        <div className="physiology-grid-2">
+      <section className="lp-section">
+        <div className="lp-duo">
           {/* Left: Cashflow Breakdown */}
-          <div className="physiology-card">
-            <div className="card-pill-eyebrow">Monthly Cashflow Physiology</div>
-            <h3 className="card-headline">Where Every Rupee Actually Goes</h3>
-            <p className="card-subtext">
+          <div className="lp-card">
+            <span className="lp-card-eyebrow">Monthly Cashflow Physiology</span>
+            <h3 className="lp-card-title">Where Every Rupee Actually Goes</h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
               Based on your calibrated ground-truth monthly records. Outflows are mapped across living,
               debt servicing, and investable surplus.
             </p>
 
-            <div className="pie-chart-wrap">
+            <div style={{ margin: '8px 0' }}>
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
@@ -595,9 +577,10 @@ export default function LandingPage({
                   <Tooltip
                     formatter={(val) => currency(val)}
                     contentStyle={{
-                      backgroundColor: 'var(--bg-surface-solid, #ffffff)',
-                      borderColor: 'var(--border-coral, #FF5E62)',
+                      backgroundColor: 'var(--bg-surface, #0E1424)',
+                      borderColor: 'var(--border-medium, rgba(255,255,255,0.14))',
                       borderRadius: '12px',
+                      color: 'var(--text-primary, #F8FAFC)',
                     }}
                   />
                   <Legend />
@@ -605,28 +588,27 @@ export default function LandingPage({
               </ResponsiveContainer>
             </div>
 
-            <div className="card-action-row">
-              <button
-                type="button"
-                className="vibrant-btn-secondary full-width"
-                onClick={() => navigate('/records')}
-              >
-                <span>Manage Ground Truth Ledger ({months.length} Months Tracked)</span>
-                <span>→</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              className="lp-btn lp-btn-secondary"
+              style={{ width: '100%', justifyContent: 'center' }}
+              onClick={() => navigate('/records')}
+            >
+              <span>Manage Ground Truth Ledger ({months.length} Months Tracked)</span>
+              <span>→</span>
+            </button>
           </div>
 
           {/* Right: AI Chat Twin Studio Preview */}
-          <div className="physiology-card highlight-card">
-            <div className="card-pill-eyebrow">Conversational Intelligence</div>
-            <h3 className="card-headline">Ask Anything to Your Digital Twin</h3>
-            <p className="card-subtext">
+          <div className="lp-card">
+            <span className="lp-card-eyebrow">Conversational Intelligence</span>
+            <h3 className="lp-card-title">Ask Anything to Your Digital Twin</h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
               Natural language queries backed by your personal financial mathematics. Click any sample question
               below to test the AI Twin immediately:
             </p>
 
-            <div className="quick-chat-prompts-list">
+            <div className="lp-quick-prompts">
               {[
                 'Can I afford a ₹15 Lakh home renovation in 12 months?',
                 'What happens to my net worth if inflation hits 9%?',
@@ -636,26 +618,25 @@ export default function LandingPage({
                 <button
                   key={idx}
                   type="button"
-                  className="quick-prompt-card-btn"
+                  className="lp-prompt"
                   onClick={() => quickPromptJump(questionText)}
                 >
-                  <span className="prompt-sparkle">💬</span>
-                  <span className="prompt-text-label">"{questionText}"</span>
-                  <span className="prompt-arrow">→</span>
+                  <span>💬</span>
+                  <span>"{questionText}"</span>
+                  <span>→</span>
                 </button>
               ))}
             </div>
 
-            <div className="card-action-row">
-              <button
-                type="button"
-                className="vibrant-btn-primary full-width"
-                onClick={() => navigate('/chat')}
-              >
-                <span>Launch Full AI Twin Chat Studio</span>
-                <span>→</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              className="lp-btn lp-btn-primary"
+              style={{ width: '100%', justifyContent: 'center', marginTop: 'auto' }}
+              onClick={() => navigate('/chat')}
+            >
+              <span>Launch Full AI Twin Chat Studio</span>
+              <span className="lp-btn-arrow">→</span>
+            </button>
           </div>
         </div>
       </section>
@@ -663,23 +644,21 @@ export default function LandingPage({
       {/* ─────────────────────────────────────────────────────────────
           5. Why FinTwin Wins: The Architectural Edge (For Mentors)
       ───────────────────────────────────────────────────────────── */}
-      <section className="landing-section architecture-edge-section">
-        <div className="section-header-center">
-          <div className="section-pill-tag">
-            <span>Enterprise System Architecture</span>
-          </div>
-          <h2 className="section-headline">
-            Engineered for <span className="gradient-text-warm">Mathematical Rigor</span>
+      <section className="lp-section">
+        <div className="lp-section-head">
+          <span className="lp-pill">Enterprise System Architecture</span>
+          <h2 className="lp-h2">
+            Engineered for <span className="lp-h2-accent">Mathematical Rigor</span>
           </h2>
-          <p className="section-subtext">
+          <p className="lp-section-sub">
             Surpassing superficial chatbots with deterministic statistical modeling, autonomous multi-agent
             consensus, and 100% explainable trajectory forecasting.
           </p>
         </div>
 
-        <div className="edge-pillars-grid">
-          <div className="edge-pillar-card">
-            <div className="pillar-icon-box">📐</div>
+        <div className="lp-pillars">
+          <div className="lp-pillar">
+            <div className="lp-pillar-icon">📐</div>
             <h4>Mathematical Drift Modeling</h4>
             <p>
               Integrates XGBoost, Prophet, and LSTM time-series forecasting. Predicts how lifestyle inflation
@@ -687,8 +666,8 @@ export default function LandingPage({
             </p>
           </div>
 
-          <div className="edge-pillar-card">
-            <div className="pillar-icon-box">🤖</div>
+          <div className="lp-pillar">
+            <div className="lp-pillar-icon">🤖</div>
             <h4>Multi-Agent Autonomous Auditing</h4>
             <p>
               FastAPI multi-agent hub orchestrating 4 domain specialists (Spending, Wealth, Risk, Goal) to
@@ -696,8 +675,8 @@ export default function LandingPage({
             </p>
           </div>
 
-          <div className="edge-pillar-card">
-            <div className="pillar-icon-box">💡</div>
+          <div className="lp-pillar">
+            <div className="lp-pillar-icon">💡</div>
             <h4>Zero Black-Box Explainability</h4>
             <p>
               Every recommendation outputs the exact mathematical rationale in plain English so users
@@ -705,8 +684,8 @@ export default function LandingPage({
             </p>
           </div>
 
-          <div className="edge-pillar-card">
-            <div className="pillar-icon-box">🛡️</div>
+          <div className="lp-pillar">
+            <div className="lp-pillar-icon">🛡️</div>
             <h4>Resilient Hybrid Architecture</h4>
             <p>
               Seamless fallback between cloud FastAPI multi-agent backend and client-side deterministic
@@ -719,36 +698,32 @@ export default function LandingPage({
       {/* ─────────────────────────────────────────────────────────────
           6. Final Call to Action Banner
       ───────────────────────────────────────────────────────────── */}
-      <section className="landing-final-cta-section">
-        <div className="final-cta-card">
-          <div className="final-cta-content">
-            <span className="final-cta-badge">Ready for Financial Mastery?</span>
-            <h2 className="final-cta-title">
-              Experience the Future of Personal Wealth Management Today.
-            </h2>
-            <p className="final-cta-desc">
-              Calibrate your digital twin in 30 seconds with 6 months of demo data or ingest your real bank statements.
-            </p>
+      <section className="lp-final">
+        <div className="lp-final-card">
+          <span className="lp-final-badge">Ready for Financial Mastery?</span>
+          <h2>Experience the Future of Personal Wealth Management Today.</h2>
+          <p>
+            Calibrate your digital twin in 30 seconds with 6 months of demo data or ingest your real bank statements.
+          </p>
 
-            <div className="final-cta-actions">
-              <button
-                type="button"
-                className="vibrant-btn-primary cta-glow"
-                onClick={handleLaunchDemo}
-              >
-                <span className="btn-icon">⚡</span>
-                <span>Launch Full Twin Experience Now</span>
-                <span className="btn-arrow">→</span>
-              </button>
+          <div className="lp-final-actions">
+            <button
+              type="button"
+              className="lp-btn lp-btn-primary"
+              onClick={handleLaunchDemo}
+            >
+              <span>⚡</span>
+              <span>Launch Full Twin Experience Now</span>
+              <span className="lp-btn-arrow">→</span>
+            </button>
 
-              <button
-                type="button"
-                className="vibrant-btn-ghost cta-white"
-                onClick={() => navigate('/login')}
-              >
-                <span>Create Free Account / Sign In</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              className="lp-btn lp-btn-ghost"
+              onClick={() => navigate('/login')}
+            >
+              <span>Create Free Account / Sign In</span>
+            </button>
           </div>
         </div>
       </section>
@@ -756,20 +731,20 @@ export default function LandingPage({
       {/* ─────────────────────────────────────────────────────────────
           7. Heartwarming Footer
       ───────────────────────────────────────────────────────────── */}
-      <footer className="landing-footer">
-        <div className="footer-top-row">
-          <div className="footer-brand-col">
-            <div className="footer-logo">
-              <span className="brand-gem">🧬</span>
-              <span className="brand-name">FinTwin<span className="brand-accent">AI</span></span>
+      <footer className="lp-footer">
+        <div className="lp-footer-inner">
+          <div className="lp-footer-brand-col">
+            <div className="lp-footer-brand">
+              <div className="lp-footer-mark">🧬</div>
+              <span>FinTwin<span style={{ color: 'var(--color-lavender)' }}>AI</span></span>
             </div>
-            <p className="footer-brand-tagline">
+            <p className="lp-footer-tagline">
               Autonomous Financial Digital Twin & Multi-Agent Intelligence Hub. Built for Project Expo 2024.
             </p>
           </div>
 
-          <div className="footer-links-col">
-            <span className="footer-links-heading">Explore Modules</span>
+          <div className="lp-footer-links">
+            <h5>Explore Modules</h5>
             <button type="button" onClick={() => navigate('/dashboard')}>Executive Dashboard</button>
             <button type="button" onClick={() => navigate('/chat')}>AI Twin Studio</button>
             <button type="button" onClick={() => navigate('/scenarios')}>What-If Sandbox</button>
@@ -777,8 +752,8 @@ export default function LandingPage({
             <button type="button" onClick={() => navigate('/agents')}>Multi-Agent Hub</button>
           </div>
 
-          <div className="footer-links-col">
-            <span className="footer-links-heading">Expo Highlights</span>
+          <div className="lp-footer-links">
+            <h5>Expo Highlights</h5>
             <span>✓ 4 Specialized Agents</span>
             <span>✓ 94.8% ML Accuracy</span>
             <span>✓ Zero Black-Box Math</span>
@@ -786,13 +761,13 @@ export default function LandingPage({
           </div>
         </div>
 
-        <div className="footer-bottom-row">
+        <div className="lp-footer-bottom">
           <span>© 2024 FinTwinAI. All rights reserved. Built with passion for excellence.</span>
-          <div className="footer-badges">
-            <span className="tech-badge">React 18</span>
-            <span className="tech-badge">Vite</span>
-            <span className="tech-badge">FastAPI</span>
-            <span className="tech-badge">Recharts</span>
+          <div className="lp-footer-badges">
+            <span className="lp-tech">React 18</span>
+            <span className="lp-tech">Vite</span>
+            <span className="lp-tech">FastAPI</span>
+            <span className="lp-tech">Recharts</span>
           </div>
         </div>
       </footer>
