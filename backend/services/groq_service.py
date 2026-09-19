@@ -1,6 +1,7 @@
 from groq import AsyncGroq
 from typing import Optional
 from config import settings
+from core.currency import ensure_inr
 
 
 class GroqService:
@@ -33,7 +34,8 @@ class GroqService:
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
-            return completion.choices[0].message.content
+            raw = completion.choices[0].message.content
+            return ensure_inr(raw) if raw else None
         except Exception as e:
             print(f"Groq API error: {e}")
             return None
@@ -57,12 +59,13 @@ class GroqService:
         )
         agents = "; ".join(f"{item['agent']}: {item['signal']}" for item in agent_outputs)
 
-        system_prompt = """You are FinTwinAI, a personalized financial digital twin assistant.
-Provide concise, specific financial guidance based on the user's actual data.
-Use concrete numbers from their profile and forecast. Be practical and actionable.
-Keep responses under 3-4 sentences. All monetary values are in Indian rupees (₹)."""
+        system_prompt = """You are FinTwinAI, an Indian financial digital twin assistant.
+All profile and forecast figures provided are NATIVELY in Indian Rupees (INR, ₹). They are NOT US Dollars.
+Exchange rate standard: 1 USD ($) = 95.91 INR (₹) | 1 INR (₹) = 0.0104 USD.
+Provide concise, specific financial guidance directly in Indian Rupees (₹).
+Keep responses under 3-4 sentences."""
 
-        user_prompt = f"""User financial profile (amounts in Indian rupees, ₹):
+        user_prompt = f"""User financial profile (all figures in Indian Rupees, ₹):
 - Monthly income: ₹{profile.get('monthly_income', 0):,.2f}
 - Monthly outflow: ₹{profile.get('monthly_outflow', 0):,.2f}
 - Monthly surplus: ₹{profile.get('monthly_surplus', 0):,.2f}

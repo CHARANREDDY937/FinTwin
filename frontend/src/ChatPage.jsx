@@ -27,13 +27,31 @@ import {
   BarChart3,
   LineChart as LineChartIcon,
   PieChart as PieChartIcon,
+  Percent,
+  CheckCircle,
+  Calendar,
+  Layers,
+  ShieldCheck,
+  Zap,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
   Trash2,
   ArrowRight,
+  X,
 } from 'lucide-react';
+
+function ensureRupees(text) {
+  if (typeof text !== 'string') return text;
+  return text
+    .replace(/\$\s*(\d[\d,]*(?:\.\d+)?)/g, '₹$1')
+    .replace(/\bUSD\s*(\d[\d,]*(?:\.\d+)?)/gi, '₹$1')
+    .replace(/(\d[\d,]*(?:\.\d+)?)\s*USD\b/gi, '₹$1')
+    .replace(/(\d[\d,]*(?:\.\d+)?)\s*(?:dollars?|bucks?)\b/gi, '₹$1')
+    .replace(/\$/g, '₹')
+    .replace(/₹\s*₹+/g, '₹');
+}
 
 const graphViews = [
   { id: 'expense', label: 'Expenses', color: '#FB7185', icon: TrendingDown },
@@ -160,9 +178,11 @@ export default function ChatPage({
   modelAnswer,
   latestInsight,
 }) {
+  const isMobileInitial = typeof window !== 'undefined' && window.innerWidth < 1024;
   const [searchHistory, setSearchHistory] = useState('');
-  const [hideLeft, setHideLeft] = useState(false);
-  const [hideRight, setHideRight] = useState(false);
+  const [hideLeft, setHideLeft] = useState(isMobileInitial);
+  const [hideRight, setHideRight] = useState(isMobileInitial);
+  const [mobileDrawer, setMobileDrawer] = useState(null); // 'left' | 'right' | null
   const messagesEndRef = useRef(null);
 
   const activeView = graphViews.find((v) => v.id === graphMetric) || graphViews[0];
@@ -206,7 +226,7 @@ export default function ChatPage({
         }`}
       >
         {/* ================= LEFT COLUMN: HISTORY & PROMPTS ================= */}
-        <aside className={`chat-history-sidebar panel ${hideLeft ? 'collapsed' : ''}`}>
+        <aside className={`chat-history-sidebar panel ${hideLeft ? 'collapsed' : ''} ${mobileDrawer === 'left' ? 'mobile-open' : ''}`}>
           <div className="sidebar-top">
             <div className="sidebar-heading-row">
               <span className="sidebar-icon">
@@ -214,17 +234,27 @@ export default function ChatPage({
               </span>
               <h3>Conversation History</h3>
             </div>
-            {chat.length > 0 && (
+            <div className="sidebar-top-actions">
+              {chat.length > 0 && (
+                <button
+                  type="button"
+                  className="clear-history-btn"
+                  onClick={clearChat}
+                  title="Clear all conversation messages"
+                >
+                  <Trash2 size={12} />
+                  <span>Clear</span>
+                </button>
+              )}
               <button
                 type="button"
-                className="clear-history-btn"
-                onClick={clearChat}
-                title="Clear all conversation messages"
+                className="mobile-close-drawer-btn mobile-only"
+                onClick={() => setMobileDrawer(null)}
+                title="Close History Drawer"
               >
-                <Trash2 size={12} />
-                <span>Clear</span>
+                <X size={16} />
               </button>
-            )}
+            </div>
           </div>
 
           {/* Search bar */}
@@ -298,12 +328,18 @@ export default function ChatPage({
             <div className="feed-header-meta">
               <button
                 type="button"
-                className={`sidebar-toggle-btn ${!hideLeft ? 'active' : ''}`}
-                onClick={() => setHideLeft(!hideLeft)}
+                className={`sidebar-toggle-btn ${(!hideLeft || mobileDrawer === 'left') ? 'active' : ''}`}
+                onClick={() => {
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                    setMobileDrawer(mobileDrawer === 'left' ? null : 'left');
+                  } else {
+                    setHideLeft(!hideLeft);
+                  }
+                }}
                 title={hideLeft ? 'Expand History Sidebar' : 'Collapse History Sidebar'}
               >
-                {hideLeft ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
-                <span className="desktop-only">History</span>
+                {hideLeft && mobileDrawer !== 'left' ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+                <span className="sidebar-btn-label">History</span>
               </button>
 
               <div className="bot-pulse-avatar">
@@ -325,13 +361,19 @@ export default function ChatPage({
 
               <button
                 type="button"
-                className={`sidebar-toggle-btn ${!hideRight ? 'active' : ''}`}
-                onClick={() => setHideRight(!hideRight)}
+                className={`sidebar-toggle-btn ${(!hideRight || mobileDrawer === 'right') ? 'active' : ''}`}
+                onClick={() => {
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                    setMobileDrawer(mobileDrawer === 'right' ? null : 'right');
+                  } else {
+                    setHideRight(!hideRight);
+                  }
+                }}
                 title={hideRight ? 'Expand Forecast Panel' : 'Collapse Forecast Panel'}
               >
                 <BarChart3 size={14} />
-                <span className="desktop-only">Forecast</span>
-                {hideRight ? <PanelRightOpen size={14} /> : <PanelRightClose size={14} />}
+                <span className="sidebar-btn-label">Forecast</span>
+                {hideRight && mobileDrawer !== 'right' ? <PanelRightOpen size={14} /> : <PanelRightClose size={14} />}
               </button>
             </div>
           </div>
@@ -382,7 +424,7 @@ export default function ChatPage({
                         <span>{msg.title}</span>
                       </div>
                     )}
-                    <div className="bubble-text-content">{msg.text}</div>
+                    <div className="bubble-text-content">{ensureRupees(msg.text)}</div>
                     {msg.metric && (
                       <>
                         <div className="bubble-metric-hint">
@@ -457,16 +499,26 @@ export default function ChatPage({
         </main>
 
         {/* ================= RIGHT COLUMN: SYNCHRONIZED CHARTS ================= */}
-        <aside className={`chat-charts-sidebar panel ${hideRight ? 'collapsed' : ''}`}>
+        <aside className={`chat-charts-sidebar panel ${hideRight ? 'collapsed' : ''} ${mobileDrawer === 'right' ? 'mobile-open' : ''}`}>
           <div className="charts-sidebar-top">
             <div className="charts-sidebar-title">
-              <span className="charts-icon">
-                <BarChart3 size={18} color="#38BDF8" />
-              </span>
-              <div>
-                <h3>Synchronized Forecast</h3>
-                <span className="charts-sub">Adapts in real-time to chat topics</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="charts-icon">
+                  <BarChart3 size={18} color="#38BDF8" />
+                </span>
+                <div>
+                  <h3>Synchronized Forecast</h3>
+                  <span className="charts-sub">Adapts in real-time to chat topics</span>
+                </div>
               </div>
+              <button
+                type="button"
+                className="mobile-close-drawer-btn mobile-only"
+                onClick={() => setMobileDrawer(null)}
+                title="Close Forecast Drawer"
+              >
+                <X size={16} />
+              </button>
             </div>
 
             <div className="chart-type-tabs">
@@ -619,6 +671,14 @@ export default function ChatPage({
           </div>
         </aside>
       </div>
+
+      {/* Mobile Drawer Backdrop */}
+      {mobileDrawer && (
+        <div
+          className="mobile-drawer-backdrop"
+          onClick={() => setMobileDrawer(null)}
+        />
+      )}
     </div>
   );
 }

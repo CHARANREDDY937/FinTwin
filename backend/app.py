@@ -10,6 +10,7 @@ from agents.collaborative_graph import collaborative_system
 from core.digital_twin_engine import FinancialDigitalTwinEngine
 from core.explainability_engine import ExplainabilityEngine
 from core.forecasting_engine import ForecastingScenarioEngine
+from core.currency import ensure_inr
 from schemas import ChatRequest, FinancialMonth, PersonalizedTrainingRequest, ScenarioRequest, TwinProfileRequest
 from services.model_service import PersonalizedFinanceModelService
 from training.dataset_registry import dataset_summary
@@ -61,10 +62,15 @@ def create_financial_twin(request: TwinProfileRequest):
         max_rounds=request.max_rounds or 3,
     )
 
+    agents = result["agent_outputs"]
+    for agent_data in agents.values():
+        if "signal" in agent_data and isinstance(agent_data["signal"], str):
+            agent_data["signal"] = ensure_inr(agent_data["signal"])
+
     return {
         "profile": result["profile"],
-        "agents": result["agent_outputs"],
-        "final_answer": result["final_answer"],
+        "agents": agents,
+        "final_answer": ensure_inr(result["final_answer"]),
         "explainability": result["explanation"],
         "forecast": result["forecast"],
         "collaboration_rounds": result["collaboration_rounds"],
@@ -113,13 +119,18 @@ def chat_with_twin(request: ChatRequest):
         agent_outputs=list(result["agent_outputs"].values()),
     )
 
+    agents = result["agent_outputs"]
+    for agent_data in agents.values():
+        if "signal" in agent_data and isinstance(agent_data["signal"], str):
+            agent_data["signal"] = ensure_inr(agent_data["signal"])
+
     return {
-        "answer": model_answer["answer"],
+        "answer": ensure_inr(model_answer["answer"]),
         "answer_source": model_answer["answer_source"],
         "model_name": model_answer["model_name"],
         "profile": result["profile"],
-        "agents": result["agent_outputs"],
-        "final_answer": result["final_answer"],
+        "agents": agents,
+        "final_answer": ensure_inr(result["final_answer"]),
         "forecast": result["forecast"],
         "explainability": result["explanation"],
         "collaboration_rounds": result["collaboration_rounds"],

@@ -3070,12 +3070,17 @@ label {
   padding: 16px 22px;
   flex-wrap: wrap;
   box-shadow: var(--shadow-sm);
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .toolbar-group {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+  max-width: 100%;
 }
 
 .toolbar-label {
@@ -3084,6 +3089,7 @@ label {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .pill-selector {
@@ -3093,6 +3099,8 @@ label {
   padding: 3px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+  max-width: 100%;
 }
 
 .pill-btn {
@@ -3102,6 +3110,7 @@ label {
   font-weight: 600;
   color: var(--text-muted);
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .pill-btn:hover { color: var(--text-primary); }
@@ -3123,18 +3132,27 @@ label {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .scenario-chart-panel {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .scenario-impact-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .impact-card {
@@ -3547,12 +3565,63 @@ label {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Responsive Media Queries (Page Content)
+   Comprehensive Mobile & Tablet Responsive Architecture
 ───────────────────────────────────────────────────────────── */
+
+/* Mobile Drawer Animations */
+@keyframes slideDrawerFromLeft {
+  from { transform: translateX(-100%); opacity: 0.5; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideDrawerFromRight {
+  from { transform: translateX(100%); opacity: 0.5; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.mobile-close-drawer-btn {
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  transition: all 0.15s ease;
+}
+
+.mobile-close-drawer-btn:hover {
+  background: var(--bg-surface-active);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.sidebar-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table-scroll-hint {
+  display: none;
+}
+
+/* ============================================================
+   1. TABLET BREAKPOINT (max-width: 1024px)
+   ============================================================ */
 @media (max-width: 1024px) {
   .desktop-only { display: none !important; }
   .mobile-only  { display: flex !important; }
   .mobile-hamburger { display: flex !important; }
+
+  .page-container {
+    padding: 20px 18px 32px 18px;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
 
   .landing-hero-section {
     grid-template-columns: 1fr;
@@ -3561,7 +3630,7 @@ label {
   }
 
   .landing-hero-title {
-    font-size: 2.4rem;
+    font-size: 2.3rem;
   }
 
   .edge-pillars-grid {
@@ -3576,23 +3645,34 @@ label {
     grid-template-columns: 1fr;
   }
 
-  .chat-studio-layout {
-    grid-template-columns: 1fr;
-    height: auto;
-  }
-
-  .chat-history-sidebar, .chat-charts-sidebar {
-    display: none;
-  }
-
+  /* Dashboard */
   .dashboard-hero-banner {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 
   .summary-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
   }
 
+  .dashboard-bottom-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  /* Agents Page */
+  .agents-top-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .agents-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  /* Auth Page */
   .auth-card-wrapper {
     grid-template-columns: 1fr;
   }
@@ -3600,38 +3680,511 @@ label {
   .auth-pitch-column {
     display: none;
   }
+
+  /* Chat Studio Layout & Mobile Drawers */
+  .chat-studio-page {
+    padding: 16px 14px 16px 14px;
+  }
+
+  .chat-studio-layout,
+  .chat-studio-layout.hide-left,
+  .chat-studio-layout.hide-right,
+  .chat-studio-layout.hide-both {
+    grid-template-columns: 1fr !important;
+    height: calc(100dvh - 90px);
+    max-height: calc(100dvh - 90px);
+  }
+
+  .chat-feed-center {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .chat-history-sidebar,
+  .chat-charts-sidebar {
+    display: none;
+  }
+
+  .chat-history-sidebar.mobile-open,
+  .chat-charts-sidebar.mobile-open {
+    display: flex !important;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    z-index: 9999;
+    width: min(88vw, 360px);
+    height: 100vh;
+    max-height: 100vh;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-medium);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+    overflow-y: auto;
+    padding: 18px;
+  }
+
+  .chat-history-sidebar.mobile-open {
+    left: 0;
+    animation: slideDrawerFromLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .chat-charts-sidebar.mobile-open {
+    right: 0;
+    animation: slideDrawerFromRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .mobile-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 9998;
+    animation: fadeIn 0.2s ease both;
+  }
 }
 
+/* ============================================================
+   2. MOBILE BREAKPOINT (max-width: 768px)
+   ============================================================ */
 @media (max-width: 768px) {
   .desktop-only { display: none !important; }
   .mobile-only  { display: flex !important; }
 
-  .page-container {
-    padding: 16px 16px 60px 16px;
+  .main-content-outlet {
+    padding-bottom: 74px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
-  .landing-hero-title {
-    font-size: 1.95rem;
+  .page-container {
+    padding: 14px 12px 24px 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .page-header-banner {
+    padding: 18px 16px;
+    border-radius: var(--radius-lg);
+  }
+
+  .header-flex-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .header-actions button {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 130px;
+    justify-content: center;
+  }
+
+  .page-title {
+    font-size: 1.65rem;
+    line-height: 1.25;
+  }
+
+  .page-subtitle {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  /* Dashboard */
+  .dashboard-hero-banner {
+    padding: 18px 16px;
+    gap: 16px;
+  }
+
+  .banner-quick-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+    padding: 12px;
+  }
+
+  .hero-action-buttons {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .hero-action-btn {
+    width: 100%;
+    justify-content: space-between;
+    padding: 12px 16px;
+  }
+
+  .summary-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .summary-kpi-card {
+    padding: 14px 14px;
+  }
+
+  .card-value {
+    font-size: 1.3rem;
+  }
+
+  .forecast-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .forecast-controls {
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .forecast-chart-container {
+    height: 260px;
+    min-height: 260px;
+  }
+
+  /* Records / Ledger */
+  .ledger-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .search-bar {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .table-scroll-hint {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 7px 10px;
+    background: var(--bg-surface-hover);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    border: 1px dashed var(--border-subtle);
+  }
+
+  .ledger-table-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-md);
+  }
+
+  .ledger-table {
+    min-width: 760px;
+    width: 100%;
+  }
+
+  .ledger-table th:first-child,
+  .ledger-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: var(--bg-surface);
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
+  }
+
+  .ledger-table th:first-child {
+    background: var(--bg-surface-hover);
+    z-index: 4;
+  }
+
+  /* Scenarios */
+  .scenarios-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  .scenario-preset-card {
+    padding: 12px 14px;
+    gap: 6px;
+  }
+
+  .preset-name {
+    font-size: 0.92rem;
+  }
+
+  .preset-desc {
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .sandbox-control-strip {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .strip-control-group {
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .sandbox-impact-strip {
     grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .scenario-impact-cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .simulation-toolbar {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .toolbar-group {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    gap: 6px;
+  }
+
+  .pill-selector {
+    width: 100%;
+  }
+
+  .pill-btn {
+    flex: 1 1 auto;
+    text-align: center;
+    padding: 6px 8px;
+    font-size: 0.74rem;
+  }
+
+  /* Agents Page */
+  .ratios-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .ratio-box {
+    padding: 12px 14px;
+  }
+
+  .ratio-val {
+    font-size: 1.25rem;
+  }
+
+  .consensus-panel {
+    padding: 18px 16px;
+  }
+
+  .consensus-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Modals */
+  .modal-backdrop {
+    padding: 10px;
+    align-items: flex-end;
+  }
+
+  .glass-modal-dialog {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 20px 20px 0 0;
+    margin: 0;
+  }
+
+  .glass-modal-header {
+    padding: 16px 18px;
+  }
+
+  .glass-modal-body {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .modal-live-preview-banner {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 12px 14px;
+  }
+
+  .record-form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .form-actions-full {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .form-actions-full button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ============================================================
+   3. SMALL MOBILE BREAKPOINT (max-width: 480px)
+   ============================================================ */
+@media (max-width: 480px) {
+  .page-container {
+    padding: 10px 8px 18px 8px;
+  }
+
+  .page-header-banner {
+    padding: 16px 12px;
+  }
+
+  .page-title {
+    font-size: 1.42rem;
+  }
+
+  .header-actions button {
+    flex: 1 1 100%;
+    width: 100%;
   }
 
   .summary-cards-grid {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 
-  .dashboard-bottom-grid {
+  .scenarios-grid {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 
-  .footer-top-row {
+  .ratios-grid {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 
-  .global-chat-panel {
-    width: calc(100vw - 32px);
-    right: -8px;
+  .banner-quick-stats {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* Chat Feed on Small Mobile */
+  .chat-feed-header {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .sidebar-btn-label {
+    display: none;
+  }
+
+  .chat-messages-stream {
+    padding: 10px 8px;
+    gap: 12px;
+  }
+
+  .chat-message-bubble {
+    font-size: 0.86rem;
+    padding: 10px 12px;
+    max-width: calc(100% - 32px);
+  }
+
+  .chat-input-form {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .chat-main-input {
+    font-size: 0.84rem;
+    padding: 8px 12px;
+  }
+
+  .chat-submit-btn span {
+    display: none;
+  }
+
+  .chat-submit-btn {
+    padding: 8px 12px;
+    min-width: 42px;
+  }
+
+  .welcome-prompts-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .welcome-prompt-card {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+  }
+
+  .chat-quick-query-strip {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 8px;
+    scrollbar-width: none;
+  }
+
+  .strip-quick-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-size: 0.74rem;
+  }
+
+  /* Modal on Small Screen */
+  .modal-backdrop {
+    padding: 0;
+  }
+
+  .glass-modal-dialog {
+    border-radius: 16px 16px 0 0;
+    max-height: 94vh;
   }
 }
+
+/* ============================================================
+   4. ULTRA-COMPACT MOBILE BREAKPOINT (max-width: 360px)
+   ============================================================ */
+@media (max-width: 360px) {
+  .page-container {
+    padding: 8px 6px 14px 6px;
+  }
+
+  .page-title {
+    font-size: 1.25rem;
+  }
+
+  .card-value {
+    font-size: 1.15rem;
+  }
+
+  .hero-action-btn {
+    font-size: 0.82rem;
+    padding: 10px 12px;
+  }
+
+  .forecast-pills .pill-btn,
+  .type-toggle-btn {
+    padding: 4px 6px;
+    font-size: 0.7rem;
+  }
+
+  .preset-badge {
+    display: none;
+  }
+}

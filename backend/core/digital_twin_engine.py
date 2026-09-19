@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from schemas import FinancialMonth
 from services.groq_service import GroqService
+from core.currency import ensure_inr
 
 
 class FinancialDigitalTwinEngine:
@@ -159,7 +160,7 @@ Answer concisely using the user's specific data."""
         response = self._chat_sync(system_prompt, user_prompt)
 
         if response:
-            return response
+            return ensure_inr(response)
 
         question_text = question.lower()
         next_month = forecast[0] if forecast else {"expense": 0, "savings": 0}
@@ -168,6 +169,15 @@ Answer concisely using the user's specific data."""
             if explanation.get("feature_importance")
             else "monthly spending"
         )
+
+        if "dollar" in question_text or "usd" in question_text or "exchange rate" in question_text or "in $" in question_text:
+            usd_income = profile.get('monthly_income', 0) / 95.91
+            usd_savings = next_month.get('savings', 0) / 95.91
+            return (
+                f"At the standard exchange rate of 1 USD = ₹95.91 INR: "
+                f"Your monthly income of ₹{profile.get('monthly_income', 0):,.0f} equates to approximately ${usd_income:,.2f} USD, "
+                f"and next month's projected surplus of ₹{next_month.get('savings', 0):,.0f} is approx ${usd_savings:,.2f} USD."
+            )
 
         if "inflation" in question_text or "expense" in question_text:
             return (

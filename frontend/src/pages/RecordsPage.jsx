@@ -526,6 +526,9 @@ export default function RecordsPage({
           </div>
         ) : (
           <div className="ledger-table-container">
+            <div className="table-scroll-hint mobile-only">
+              <span>← Swipe horizontally to view all metrics & actions →</span>
+            </div>
             <table className="ledger-table">
               <thead>
                 <tr>

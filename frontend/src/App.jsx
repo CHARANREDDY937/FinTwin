@@ -58,6 +58,17 @@ function currency(value) {
   }).format(value);
 }
 
+export function ensureRupees(text) {
+  if (typeof text !== 'string') return text;
+  return text
+    .replace(/\$\s*(\d[\d,]*(?:\.\d+)?)/g, '₹$1')
+    .replace(/\bUSD\s*(\d[\d,]*(?:\.\d+)?)/gi, '₹$1')
+    .replace(/(\d[\d,]*(?:\.\d+)?)\s*USD\b/gi, '₹$1')
+    .replace(/(\d[\d,]*(?:\.\d+)?)\s*(?:dollars?|bucks?)\b/gi, '₹$1')
+    .replace(/\$/g, '₹')
+    .replace(/₹\s*₹+/g, '₹');
+}
+
 function average(values) {
   if (!values.length) return 0;
   return values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -199,7 +210,10 @@ export default function App() {
     const saved = readJson(STORAGE_KEYS.months, null);
     return saved && saved.length > 0 ? saved : demoMonths;
   });
-  const [chat, setChat] = useState(() => readJson(STORAGE_KEYS.chat, []));
+  const [chat, setChat] = useState(() => {
+    const raw = readJson(STORAGE_KEYS.chat, []);
+    return Array.isArray(raw) ? raw.map((m) => ({ ...m, text: ensureRupees(m.text) })) : [];
+  });
   // Default to light heartwarming theme as requested by user
   const [theme, setTheme] = useState(() => readJson(STORAGE_KEYS.theme, 'light'));
   const [question, setQuestion] = useState('');
@@ -301,7 +315,7 @@ export default function App() {
       const result = await askChat(text, months, graphSpan);
       setBackendOnline(true);
       if (result && result.answer) {
-        answer = result.answer;
+        answer = ensureRupees(result.answer);
         title = `Model Consensus (${result.answer_source || 'multi-agent'})`;
         source = result.answer_source || 'multi-agent';
       }
@@ -309,12 +323,13 @@ export default function App() {
       setBackendOnline(false);
     }
 
+    const finalAnswer = ensureRupees(answer);
     setLoading(false);
-    setModelAnswer({ text: answer, title, source });
+    setModelAnswer({ text: finalAnswer, title, source });
     if (metric) setGraphMetric(metric);
     setChat((current) => [
       ...current,
-      { role: 'assistant', text: answer, metric, title, date: 'Today' },
+      { role: 'assistant', text: finalAnswer, metric, title, date: 'Today' },
     ]);
   };
 
@@ -376,6 +391,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+
     </div>
   );
 }

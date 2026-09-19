@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 from config import settings
+from core.currency import USD_TO_INR_RATE
 
 
 def _clean_columns(frame: pd.DataFrame) -> pd.DataFrame:
@@ -90,14 +91,14 @@ def build_canonical_training_frame() -> pd.DataFrame:
     synthetic = load_synthetic_personal_finance_dataset()
     synthetic_frame = pd.DataFrame(
         {
-            "monthly_income": pd.to_numeric(synthetic.get("monthly_income_usd", 0), errors="coerce"),
-            "monthly_expenses": pd.to_numeric(synthetic.get("monthly_expenses_usd", 0), errors="coerce"),
-            "monthly_emi": pd.to_numeric(synthetic.get("monthly_emi_usd", 0), errors="coerce").fillna(0),
-            "loan_balance": pd.to_numeric(synthetic.get("loan_amount_usd", 0), errors="coerce").fillna(0),
+            "monthly_income": pd.to_numeric(synthetic.get("monthly_income_usd", 0), errors="coerce") * USD_TO_INR_RATE,
+            "monthly_expenses": pd.to_numeric(synthetic.get("monthly_expenses_usd", 0), errors="coerce") * USD_TO_INR_RATE,
+            "monthly_emi": pd.to_numeric(synthetic.get("monthly_emi_usd", 0), errors="coerce").fillna(0) * USD_TO_INR_RATE,
+            "loan_balance": pd.to_numeric(synthetic.get("loan_amount_usd", 0), errors="coerce").fillna(0) * USD_TO_INR_RATE,
             "credit_score": pd.to_numeric(synthetic.get("credit_score", 680), errors="coerce").fillna(680),
-            "savings": pd.to_numeric(synthetic.get("savings_usd", 0), errors="coerce").fillna(0),
-            "investments": pd.to_numeric(synthetic.get("savings_usd", 0), errors="coerce").fillna(0) * 0.18,
-            "miscellaneous": pd.to_numeric(synthetic.get("monthly_expenses_usd", 0), errors="coerce").fillna(0) * 0.1,
+            "savings": pd.to_numeric(synthetic.get("savings_usd", 0), errors="coerce").fillna(0) * USD_TO_INR_RATE,
+            "investments": pd.to_numeric(synthetic.get("savings_usd", 0), errors="coerce").fillna(0) * USD_TO_INR_RATE * 0.18,
+            "miscellaneous": pd.to_numeric(synthetic.get("monthly_expenses_usd", 0), errors="coerce").fillna(0) * USD_TO_INR_RATE * 0.1,
             "source": "synthetic_personal_finance_dataset",
         }
     )

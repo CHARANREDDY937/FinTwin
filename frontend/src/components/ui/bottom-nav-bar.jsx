@@ -57,9 +57,9 @@ export function BottomNavBar({ className, stickyBottom = false }) {
       role="navigation"
       aria-label="Bottom Navigation Dock"
       className={cn(
-        "rounded-full flex items-center p-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.12)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.45)] space-x-1 min-w-[320px] max-w-[95vw] h-[54px]",
-        "backdrop-blur-xl bg-white/80 dark:bg-slate-950/80 border border-slate-200/80 dark:border-white/10",
-        stickyBottom && "fixed inset-x-0 bottom-5 mx-auto z-40 w-fit",
+        "md:hidden rounded-full flex items-center justify-around p-1 shadow-[0_12px_36px_rgba(0,0,0,0.14)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.55)] max-w-[calc(100vw-20px)] sm:max-w-[480px] h-[52px]",
+        "backdrop-blur-xl bg-white/90 dark:bg-slate-950/90 border border-slate-200/80 dark:border-white/10",
+        stickyBottom && "fixed inset-x-0 bottom-4 mx-auto z-40 w-fit",
         className,
       )}
     >
@@ -70,11 +70,11 @@ export function BottomNavBar({ className, stickyBottom = false }) {
         return (
           <motion.button
             key={item.label}
-            whileTap={{ scale: 0.94 }}
+            whileTap={{ scale: 0.93 }}
             className={cn(
-              "flex items-center gap-0 px-3 py-2 rounded-full transition-all duration-200 relative h-10 min-w-[42px] min-h-[40px] max-h-[42px]",
+              "flex items-center gap-0 px-2 sm:px-3 py-1.5 rounded-full transition-all duration-200 relative h-9 min-w-[36px] sm:min-w-[42px]",
               isActive
-                ? "bg-violet-500/15 dark:bg-violet-500/25 text-violet-700 dark:text-violet-300 font-semibold gap-2 shadow-sm"
+                ? "bg-violet-500/15 dark:bg-violet-500/25 text-violet-700 dark:text-violet-300 font-semibold gap-1.5 shadow-sm"
                 : "bg-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-white/10",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 cursor-pointer",
             )}
@@ -83,7 +83,7 @@ export function BottomNavBar({ className, stickyBottom = false }) {
             type="button"
           >
             <Icon
-              size={20}
+              size={18}
               strokeWidth={isActive ? 2.5 : 2}
               aria-hidden
               className="transition-transform duration-200 flex-shrink-0"

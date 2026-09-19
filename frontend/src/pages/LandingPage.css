@@ -275,7 +275,7 @@
   align-items: center;
   gap: 8px;
   font-size: 0.82rem;
-  white-space: nowrap;
+  line-height: 1.4;
 }
 .lp-metric-dot {
   width: 6px; height: 6px;
@@ -612,6 +612,9 @@
   border-radius: 14px;
   border: 1px solid var(--border-subtle);
   background: var(--bg-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .lp-impact:hover {

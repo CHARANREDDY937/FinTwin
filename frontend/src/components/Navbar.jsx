@@ -436,12 +436,17 @@ const FTNAV_CSS = `
   .ftnav-mobile { display: block; }
 }
 @media (max-width: 640px) {
-  .ftnav-inner { padding: 0 14px; gap: 8px; }
+  .ftnav-inner { padding: 0 10px; gap: 6px; }
   .ftnav-status-label { display: none; }
-  .ftnav-status { padding: 0 9px; }
+  .ftnav-status { padding: 0 6px; }
   .ftnav-username { display: none; }
   .ftnav-user { padding: 4px; }
-  .ftnav-brand-name { display: none; }
+  .ftnav-brand-name { font-size: 0.95rem; }
+}
+@media (max-width: 380px) {
+  .ftnav-brand-name { font-size: 0.88rem; }
+  .ftnav-demo-btn { display: none; }
+  .ftnav-status { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ftnav-root *,

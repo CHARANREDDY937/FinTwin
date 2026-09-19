@@ -17,6 +17,7 @@ from agents.goal_agent import GoalAgent
 from core.digital_twin_engine import FinancialDigitalTwinEngine
 from core.forecasting_engine import ForecastingScenarioEngine
 from core.explainability_engine import ExplainabilityEngine
+from core.currency import ensure_inr
 from schemas import FinancialMonth
 
 
@@ -262,7 +263,8 @@ Provide a cohesive, actionable financial analysis that:
         except Exception:
             final = self._fallback_synthesis(state)
 
-        return {**state, "final_answer": final, "messages": state.get("messages", []) + [AIMessage(content=final, name="supervisor")]}
+        final_cleaned = ensure_inr(final)
+        return {**state, "final_answer": final_cleaned, "messages": state.get("messages", []) + [AIMessage(content=final_cleaned, name="supervisor")]}
 
     def _fallback_synthesis(self, state: AgentState) -> str:
         agent_outputs = state.get("agent_outputs", {})

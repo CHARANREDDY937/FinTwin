@@ -5,6 +5,7 @@ from typing import Optional
 
 from config import settings
 from services.groq_service import groq_service
+from core.currency import ensure_inr
 
 try:
     from transformers import pipeline
@@ -38,7 +39,7 @@ class PersonalizedFinanceModelService:
                 ))
                 if groq_answer:
                     return {
-                        "answer": groq_answer,
+                        "answer": ensure_inr(groq_answer),
                         "answer_source": "groq_llm",
                         "model_name": "qwen/qwen3.8-27b",
                     }
@@ -51,7 +52,7 @@ class PersonalizedFinanceModelService:
 
         if generator is None:
             return {
-                "answer": fallback_answer,
+                "answer": ensure_inr(fallback_answer),
                 "answer_source": "rule_based_fallback",
                 "model_name": None,
             }
@@ -69,13 +70,13 @@ class PersonalizedFinanceModelService:
             if not text:
                 raise ValueError("Empty model response")
             return {
-                "answer": text,
+                "answer": ensure_inr(text),
                 "answer_source": self._loaded_kind or "model",
                 "model_name": self._loaded_from,
             }
         except Exception:
             return {
-                "answer": fallback_answer,
+                "answer": ensure_inr(fallback_answer),
                 "answer_source": "rule_based_fallback",
                 "model_name": self._loaded_from,
             }
@@ -117,21 +118,30 @@ class PersonalizedFinanceModelService:
         )
         agents = "; ".join(f"{item['agent']}: {item['signal']}" for item in agent_outputs)
 
-        return f"""You are FinTwinAI, a personalized financial digital twin assistant.
+        return f"""You are FinTwinAI, a personalized financial digital twin assistant built for users in India.
 
-User financial profile:
-- Monthly income: {profile.get('monthly_income', 0):.2f}
-- Monthly outflow: {profile.get('monthly_outflow', 0):.2f}
-- Monthly surplus: {profile.get('monthly_surplus', 0):.2f}
+CURRENCY & EXCHANGE RATE SPECIFICATION:
+1. Ground Truth Currency: ALL figures provided in the profile and forecast below are strictly in Indian Rupees (INR, ₹).
+   - An income of ₹95,000 means 95,000 Indian Rupees (approx $990 USD).
+   - NEVER misinterpret these Indian Rupee values as US Dollars ($). ₹95,000 is NOT $95,000.
+2. Standard Exchange Rate: 1 USD ($) = 95.91 INR (₹) | 1 INR (₹) = 0.0104 USD.
+3. If the user explicitly asks for conversions to or from USD ($), apply the exact rate of 1 USD = 95.91 INR.
+4. For all standard recommendations, budgets, and milestone planning, keep all numbers directly in Indian Rupees (₹).
+5. Never use the dollar sign ($) for user profile numbers. Always use the Indian Rupee symbol (₹).
+
+User financial profile (all figures in Indian Rupees, ₹):
+- Monthly income: ₹{profile.get('monthly_income', 0):,.2f}
+- Monthly outflow: ₹{profile.get('monthly_outflow', 0):,.2f}
+- Monthly surplus: ₹{profile.get('monthly_surplus', 0):,.2f}
 - Savings rate: {profile.get('savings_rate', 0):.2%}
 - Debt service ratio: {profile.get('debt_service_ratio', 0):.2%}
 - Credit score: {profile.get('credit_score', 0):.0f}
-- Loan balance: {profile.get('loan_balance', 0):.2f}
+- Loan balance: ₹{profile.get('loan_balance', 0):,.2f}
 
-Forecast snapshot:
-- Next month income: {next_month.get('income', 0):.2f}
-- Next month expense: {next_month.get('expense', 0):.2f}
-- Next month savings: {next_month.get('savings', 0):.2f}
+Forecast snapshot (next month, ₹):
+- Next month income: ₹{next_month.get('income', 0):,.2f}
+- Next month expense: ₹{next_month.get('expense', 0):,.2f}
+- Next month savings: ₹{next_month.get('savings', 0):,.2f}
 
 Explainability:
 - Top features: {top_features}
@@ -139,7 +149,7 @@ Explainability:
 Agent views:
 - {agents}
 
-Answer the user's question in concise plain English, using the profile and forecast rather than generic advice.
+Answer the user's question in concise plain English, using their specific Indian Rupee (₹) numbers. Never confuse Rupees with Dollars.
 
 Question: {question}
 """

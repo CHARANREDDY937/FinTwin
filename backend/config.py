@@ -34,6 +34,7 @@ class Settings:
     agent_artifacts_dir: str = _resolve_path(os.getenv("AGENT_ARTIFACTS_DIR", "artifacts/agent_models"))
     db_connection_string: str = os.getenv("DB_CONNECTION_STRING", "postgresql+asyncpg://postgres:postgres@localhost:5432/fintwin")
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    usd_to_inr_rate: float = float(os.getenv("USD_TO_INR_RATE", "95.91"))
     jwt_secret: str = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
     jwt_algorithm: str = "HS256"
     jwt_expiration_minutes: int = 60 * 24 * 7

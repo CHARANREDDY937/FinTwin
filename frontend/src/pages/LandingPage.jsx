@@ -215,8 +215,7 @@ export default function LandingPage({
         <div className="lp-hero-card">
           <div className="lp-card-header">
             <div className="lp-card-title">
-              <span className="lp-status-dot" />
-              <span>Live Digital Twin Physiology</span>
+              <span>Digital Twin Physiology</span>
             </div>
             <span className="lp-card-badge">Ground-Truth Calibrated</span>
           </div>
