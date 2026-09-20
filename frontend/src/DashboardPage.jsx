@@ -33,6 +33,7 @@ import {
   Zap,
   Cpu,
 } from 'lucide-react';
+import { usePageTitle } from './lib/hooks';
 
 const graphViews = [
   { id: 'expense', label: 'Expenses', color: '#FB7185', icon: TrendingDown },
@@ -130,6 +131,7 @@ export default function DashboardPage({
   demoMonths = [],
 }) {
   const navigate = useNavigate();
+  usePageTitle('Dashboard — FinTwinAI');
   const latestMonth = months.length ? [...months].sort((a, b) => (a.month > b.month ? -1 : 1))[0] : null;
 
   const activeView = graphViews.find((v) => v.id === graphMetric) || graphViews[0];

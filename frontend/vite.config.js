@@ -13,4 +13,10 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
   },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    css: false,
+    setupFiles: './vitest.setup.js',
+  },
 });

@@ -77,7 +77,12 @@ export default function FinancialHealthGauge({
   const scoreFontSize = Math.max(24, Math.round(size * 0.19));
 
   return (
-    <div className="health-gauge-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div
+      className="health-gauge-card"
+      role="img"
+      aria-label={`Financial health score ${normalizedScore} out of 100`}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+    >
       <div
         className="gauge-svg-container"
         style={{

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginUser, registerUser } from '../api';
+import { usePageTitle } from '../lib/hooks';
 
 export default function AuthPage({ user, setUser, setMonths, demoMonths }) {
+  usePageTitle('Sign In — FinTwinAI');
   const navigate = useNavigate();
   const [authMode, setAuthMode] = useState('login');
   const [form, setForm] = useState({ name: '', email: '', password: '' });

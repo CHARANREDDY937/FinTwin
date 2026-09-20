@@ -41,6 +41,12 @@ AsyncSessionLocal = async_sessionmaker(
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        if settings.db_connection_string.startswith("sqlite"):
+            try:
+                from sqlalchemy import text
+                await conn.execute(text("ALTER TABLE financial_months ADD COLUMN transactions TEXT DEFAULT '[]'"))
+            except Exception:
+                pass
 
 
 async def close_db():

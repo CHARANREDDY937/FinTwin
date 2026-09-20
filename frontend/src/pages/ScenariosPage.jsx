@@ -13,8 +13,8 @@ import {
   SCENARIO_PRESETS,
   MODEL_OPTIONS,
   simulateLocalScenario,
-  simulateScenarioAPI,
 } from '../api';
+import { usePageTitle } from '../lib/hooks';
 
 function currency(val) {
   return new Intl.NumberFormat('en-IN', {
@@ -29,6 +29,7 @@ export default function ScenariosPage({
   months,
   theme,
 }) {
+  usePageTitle('Life Scenario Simulator — FinTwinAI');
   const [selectedScenarioKey, setSelectedScenarioKey] = useState('inflation');
   const [selectedModel, setSelectedModel] = useState('xgboost');
   const [horizon, setHorizon] = useState(24);

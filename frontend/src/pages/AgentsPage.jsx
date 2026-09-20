@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import FinancialHealthGauge from '../components/FinancialHealthGauge';
 import { evaluateLocalAgents } from '../api';
+import { usePageTitle } from '../lib/hooks';
 
 function currency(val) {
   return new Intl.NumberFormat('en-IN', {
@@ -18,6 +19,7 @@ export default function AgentsPage({
   const agentsData = useMemo(() => {
     return evaluateLocalAgents(profile, months);
   }, [profile, months]);
+  usePageTitle('Multi-Agent Intelligence — FinTwinAI');
 
   // Overall financial health score
   const healthScore = useMemo(() => {

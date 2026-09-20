@@ -67,6 +67,7 @@ class FinancialMonth(Base):
     emi_monthly = Column(Numeric(12, 2), default=0, nullable=False)
     miscellaneous_charges = Column(Numeric(12, 2), default=0, nullable=False)
     money_spent = Column(Numeric(12, 2), default=0, nullable=False)
+    transactions = Column(Text, nullable=True, default="[]")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

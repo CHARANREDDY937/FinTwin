@@ -5,6 +5,7 @@ from typing import Optional, List
 import uuid
 import hashlib
 import secrets
+import json
 
 from database.models import User, FinancialMonth, ChatMessage
 
@@ -68,6 +69,9 @@ async def add_financial_month(db: AsyncSession, user_id: uuid.UUID, month_data: 
     )
     existing_month = existing.scalar_one_or_none()
 
+    raw_txns = month_data.get("transactions")
+    txns_str = json.dumps(raw_txns) if isinstance(raw_txns, (list, dict)) else (str(raw_txns) if raw_txns is not None else "[]")
+
     if existing_month:
         existing_month.active_income = month_data["active_income"]
         existing_month.passive_income = month_data["passive_income"]
@@ -76,13 +80,17 @@ async def add_financial_month(db: AsyncSession, user_id: uuid.UUID, month_data: 
         existing_month.emi_monthly = month_data["emi_monthly"]
         existing_month.miscellaneous_charges = month_data["miscellaneous_charges"]
         existing_month.money_spent = month_data["money_spent"]
+        if "transactions" in month_data:
+            existing_month.transactions = txns_str
         await db.flush()
         await db.refresh(existing_month)
         return existing_month
     else:
+        month_dict = dict(month_data)
+        month_dict["transactions"] = txns_str
         month = FinancialMonth(
             user_id=user_id,
-            **month_data
+            **month_dict
         )
         db.add(month)
         await db.flush()

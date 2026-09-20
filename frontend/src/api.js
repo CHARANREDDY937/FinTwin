@@ -1,6 +1,51 @@
+// API client for the FinTwinAI backend.
+// Network helpers only — the deterministic "local twin" simulation engines
+// live in src/lib/twinEngine.js (with SCENARIO_PRESETS/MODEL_OPTIONS etc).
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
-// Convert camelCase month objects to snake_case FinancialMonth schema for the backend
+const TOKEN_KEY = 'fintwinai:token';
+const DEFAULT_TIMEOUT = 8000;
+
+function getToken() {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Centralized fetch wrapper: JSON body, AbortController timeout, error
+ * normalization, optional Bearer token. Rejects with a descriptive Error.
+ */
+async function request(path, { method = 'GET', body, timeout = DEFAULT_TIMEOUT, auth = true } = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const headers = { 'Content-Type': 'application/json' };
+
+  if (auth) {
+    const token = getToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.detail || `Request failed with status ${response.status}`);
+    }
+    return data;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+// Convert camelCase month objects to snake_case FinancialMonth schema.
 export function toBackendMonth(month) {
   return {
     month: month.month,
@@ -11,68 +56,38 @@ export function toBackendMonth(month) {
     emi_monthly: Number(month.emiMonthly) || 0,
     miscellaneous_charges: Number(month.miscellaneousCharges) || 0,
     money_spent: Number(month.moneySpent) || 0,
+    transactions: month.transactions || [],
   };
 }
 
 export async function askChat(question, months, horizon = 12, model = 'xgboost', scenario = 'baseline') {
-  const response = await fetch(`${API_BASE}/chat`, {
+  return request('/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      question,
-      months: months.map(toBackendMonth),
-      horizon,
-      model,
-      scenario,
-    }),
+    body: { question, months: months.map(toBackendMonth), horizon, model, scenario },
   });
-
-  if (!response.ok) {
-    throw new Error(`Chat API failed with status ${response.status}`);
-  }
-
-  return response.json();
-}
-
-export async function fetchTwinProfile(months) {
-  const response = await fetch(`${API_BASE}/twin/profile`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(months.map(toBackendMonth)),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Twin profile API failed with status ${response.status}`);
-  }
-
-  return response.json();
 }
 
 export async function simulateScenarioAPI(months, scenario = 'baseline', model = 'xgboost', horizon = 12) {
-  const response = await fetch(`${API_BASE}/forecast/scenario`, {
+  return request('/forecast/scenario', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      months: months.map(toBackendMonth),
-      scenario,
-      model,
-      horizon,
-    }),
+    body: { months: months.map(toBackendMonth), scenario, model, horizon },
   });
-
-  if (!response.ok) {
-    throw new Error(`Scenario simulation failed with status ${response.status}`);
-  }
-
-  return response.json();
 }
 
-export async function fetchDatasetsSummary() {
-  const response = await fetch(`${API_BASE}/datasets/summary`);
-  if (!response.ok) {
-    throw new Error(`Datasets summary failed with status ${response.status}`);
-  }
-  return response.json();
+export async function registerUser(email, name, password) {
+  return request('/auth/register', {
+    method: 'POST',
+    auth: false,
+    body: { email, name, password },
+  });
+}
+
+export async function loginUser(email, password) {
+  return request('/auth/login-json', {
+    method: 'POST',
+    auth: false,
+    body: { email, password },
+  });
 }
 
 export async function healthCheck() {
@@ -88,246 +103,170 @@ export async function healthCheck() {
   }
 }
 
-export async function registerUser(email, name, password) {
-  const response = await fetch(`${API_BASE}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, name, password }),
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.detail || `Register failed with status ${response.status}`);
-  }
-  return data;
-}
-
-export async function loginUser(email, password) {
-  const response = await fetch(`${API_BASE}/auth/login-json`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.detail || `Login failed with status ${response.status}`);
-  }
-  return data;
-}
-
 /* ─────────────────────────────────────────────────────────────
-   Resilient Local Simulation Engines (Full Parity with Backend)
-───────────────────────────────────────────────────────────── */
+   Statement & UPI Ingestion APIs
+   ───────────────────────────────────────────────────────────── */
 
-export const SCENARIO_PRESETS = {
-  baseline: {
-    id: 'baseline',
-    name: 'Baseline Projection',
-    badge: 'Standard',
-    icon: '📊',
-    color: '#6366F1',
-    description: 'Current trajectory assuming steady earnings, standard 6.5% inflation, and regular spending habits.',
-    incomeShock: 0.0,
-    expenseShock: 0.0,
-    debtShock: 0.0,
-  },
-  inflation: {
-    id: 'inflation',
-    name: 'Inflation Surge (+12%)',
-    badge: 'Macro Shock',
-    icon: '📈',
-    color: '#F59E0B',
-    description: 'Simulates severe consumer price inflation driving up living costs and squeezing discretionary cashflow.',
-    incomeShock: -0.01,
-    expenseShock: 0.12,
-    debtShock: 0.03,
-  },
-  home: {
-    id: 'home',
-    name: 'Home Purchase & Mortgage',
-    badge: 'Milestone',
-    icon: '🏡',
-    color: '#10B981',
-    description: 'Down-payment and long-term home mortgage addition, increasing recurring debt service and living overhead.',
-    incomeShock: 0.0,
-    expenseShock: 0.18,
-    debtShock: 0.11,
-  },
-  mba: {
-    id: 'mba',
-    name: 'Higher Education / MBA',
-    badge: 'Career Investment',
-    icon: '🎓',
-    color: '#8B5CF6',
-    description: 'Temporary 15% reduction in active earnings paired with tuition debt and educational living costs.',
-    incomeShock: -0.15,
-    expenseShock: 0.09,
-    debtShock: 0.08,
-  },
-  jobloss: {
-    id: 'jobloss',
-    name: 'Income Shock / Career Break',
-    badge: 'Stress Test',
-    icon: '💼',
-    color: '#EF4444',
-    description: 'Emergency stress test: 45% drop in monthly income while essential expenses and loan obligations persist.',
-    incomeShock: -0.45,
-    expenseShock: 0.05,
-    debtShock: 0.06,
-  },
-  downturn: {
-    id: 'downturn',
-    name: 'Market Downturn',
-    badge: 'Macro Shock',
-    icon: '📉',
-    color: '#EC4899',
-    description: 'Economic contraction with stagnant wage growth, modest living price hikes, and credit tightening.',
-    incomeShock: -0.03,
-    expenseShock: 0.03,
-    debtShock: 0.05,
-  },
-  vehicle: {
-    id: 'vehicle',
-    name: 'Vehicle Purchase (Auto Loan)',
-    badge: 'Asset Purchase',
-    icon: '🚗',
-    color: '#06B6D4',
-    description: 'New vehicle down payment, monthly auto loan EMI, plus recurring fuel and maintenance costs.',
-    incomeShock: 0.0,
-    expenseShock: 0.08,
-    debtShock: 0.10,
-  },
-};
-
-export const MODEL_OPTIONS = [
-  { id: 'xgboost', name: 'XGBoost Gradient Boosted', tag: 'Balanced', speed: '< 20ms' },
-  { id: 'lstm', name: 'LSTM Recurrent Neural Net', tag: 'Trend Sensitive', speed: '< 45ms' },
-  { id: 'prophet', name: 'Meta Prophet Time-Series', tag: 'Seasonal', speed: '< 30ms' },
-];
-
-export function simulateLocalScenario(profile, months, scenarioKey = 'baseline', modelKey = 'xgboost', horizon = 12) {
-  const scenario = SCENARIO_PRESETS[scenarioKey] || SCENARIO_PRESETS.baseline;
-  const growthRate = modelKey === 'lstm' ? 0.04 : modelKey === 'prophet' ? 0.03 : 0.035;
-
-  const baseIncome = profile.income || profile.avgIncome || 95000;
-  const baseExpense = profile.outflow || profile.avgOutflow || 65000;
-  const trend = profile.spendingTrend || 0;
-  const loanBalance = profile.loanBalance || 0;
-
-  let runningNetWorth = Math.max(0, profile.savings) - loanBalance;
-  const forecast = [];
-
-  for (let index = 1; index <= horizon; index++) {
-    const inflationLift = Math.pow(1 + 0.065 + scenario.expenseShock, index / 12);
-    const behaviorLift = Math.pow(1 + growthRate + Math.max(-0.03, Math.min(0.08, trend / 2)), index / 12);
-    const income = Math.round(baseIncome * Math.pow(1 + scenario.incomeShock, index / 18));
-    const expense = Math.round(baseExpense * inflationLift * behaviorLift);
-    const debtDrag = Math.round(loanBalance * scenario.debtShock * 0.02);
-    const savings = Math.round(income - expense - debtDrag);
-    runningNetWorth += savings;
-
-    forecast.push({
-      month: `M${index}`,
-      index,
-      income,
-      expense,
-      savings,
-      netWorth: Math.round(runningNetWorth),
-      debtDrag,
-    });
+export async function ingestStatementAPI(file, password = null) {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (password) {
+    formData.append('password', password);
   }
 
-  return forecast;
+  const headers = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE}/financial/ingest`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+  } catch (netErr) {
+    throw new Error(
+      `Backend engine is offline (${API_BASE}). Please start the FastAPI backend server (uvicorn app:app --reload --port 8000 in the backend folder) to parse bank statements.`
+    );
+  }
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Statement ingestion failed with status ${response.status}`);
+  }
+
+  return await response.json();
 }
 
-export function evaluateLocalAgents(profile, months) {
-  const income = Math.max(profile.income || profile.avgIncome || 1, 1);
-  const outflow = profile.outflow || profile.avgOutflow || 0;
-  const savings = profile.savings !== undefined ? profile.savings : income - outflow;
-  const creditScore = profile.creditScore || 750;
-  const loanBalance = profile.loanBalance || 0;
-  const emi = profile.emi || 0;
-  const trend = profile.spendingTrend || 0;
+export async function fetchSampleStatementAPI(type) {
+  try {
+    const data = await request(`/financial/sample-statements/${type}`, { auth: false });
+    return data;
+  } catch (err) {
+    console.warn('Backend sample statement unreachable, using local fixture:', err);
+    return getLocalSampleStatement(type);
+  }
+}
 
-  const spendingRatio = outflow / income;
-  const savingsRate = savings / income;
-  const dtiRatio = emi / income;
+export function getLocalSampleStatement(type = 'hdfc') {
+  if (type === 'phonepe' || type === 'upi' || type === 'csv') {
+    const txns = [
+      { date: '2024-06-01', month: '2024-06', narration: 'Payment to Swiggy via PhonePe UPI', type: 'debit', amount: 420, category: 'money_spent', subcategory: 'Food & Dining', confidence: 0.95 },
+      { date: '2024-06-03', month: '2024-06', narration: 'Payment to Blinkit Quick Mart', type: 'debit', amount: 890, category: 'money_spent', subcategory: 'Groceries & Essentials', confidence: 0.95 },
+      { date: '2024-06-05', month: '2024-06', narration: 'Payment to Uber India Rides', type: 'debit', amount: 310, category: 'money_spent', subcategory: 'Transport & Travel', confidence: 0.95 },
+      { date: '2024-06-07', month: '2024-06', narration: 'Monthly Rent Transfer to Landlord Sharma', type: 'debit', amount: 22000, category: 'money_spent', subcategory: 'Rent & Living', confidence: 0.95 },
+      { date: '2024-06-10', month: '2024-06', narration: 'Payment to Groww Investment UPI', type: 'debit', amount: 10000, category: 'investment', subcategory: 'Investments & Mutual Funds', confidence: 0.95 },
+      { date: '2024-06-12', month: '2024-06', narration: 'Payment to BESCOM Electricity billdesk', type: 'debit', amount: 1850, category: 'money_spent', subcategory: 'Utilities & Bills', confidence: 0.95 },
+      { date: '2024-06-15', month: '2024-06', narration: 'Payment to D-Mart Hypermarket Grocery', type: 'debit', amount: 5400, category: 'money_spent', subcategory: 'Groceries & Essentials', confidence: 0.95 },
+      { date: '2024-06-18', month: '2024-06', narration: 'Money received from Client Consulting Stipend', type: 'credit', amount: 45000, category: 'active_income', subcategory: 'Salary / Professional Income', confidence: 0.95 },
+      { date: '2024-06-22', month: '2024-06', narration: 'Payment to Netflix India Subscription', type: 'debit', amount: 649, category: 'money_spent', subcategory: 'Entertainment & Subscriptions', confidence: 0.95 },
+      { date: '2024-06-25', month: '2024-06', narration: 'Payment to Bharat Petroleum Petrol Fuel', type: 'debit', amount: 2200, category: 'money_spent', subcategory: 'Transport & Travel', confidence: 0.95 },
+    ];
 
-  return [
-    {
-      id: 'spending',
-      name: 'Spending Intelligence Agent',
-      icon: '💸',
-      color: '#F59E0B',
-      score: Math.max(20, Math.min(98, Math.round((1 - spendingRatio) * 100 + 40))),
-      status: spendingRatio > 0.75 ? 'Elevated Pressure' : spendingRatio > 0.6 ? 'Moderate' : 'Optimal Control',
-      headline: `${(spendingRatio * 100).toFixed(1)}% Income Burn Rate`,
-      analysis:
-        spendingRatio > 0.75
-          ? 'Spending pressure is in the upper quartile. High discretionary burn and lifestyle inflation are compressing surplus capacity.'
-          : trend > 0.08
-          ? 'Spending is trending upward faster than baseline projections. Audit recurring subscriptions and miscellaneous charges.'
-          : 'Spending velocity is disciplined and well-calibrated against inflows, leaving adequate breathing room.',
-      recommendation:
-        spendingRatio > 0.75
-          ? 'Cap miscellaneous charges and review discretionary categories to free up at least 10% cashflow.'
-          : 'Maintain current budget discipline and channel predictable surpluses directly to high-yield vehicles.',
-    },
-    {
-      id: 'investment',
-      name: 'Investment & Wealth Agent',
-      icon: '💰',
-      color: '#10B981',
-      score: Math.max(15, Math.min(99, Math.round(savingsRate * 150 + 20))),
-      status: savingsRate > 0.25 ? 'High Compounding' : savingsRate > 0.1 ? 'Active Accumulation' : 'Constrained',
-      headline: `${(savingsRate * 100).toFixed(1)}% Monthly Savings Rate`,
-      analysis:
-        savingsRate > 0.25
-          ? `Strong investable surplus. Your projected monthly surplus allows aggressive compounding across index and equity allocations.`
-          : savingsRate > 0.1
-          ? `Healthy surplus trajectory. Systematic monthly investments will build a stable wealth foundation within 24 months.`
-          : `Tight surplus margin. Cashflow is primarily absorbed by lifestyle and debt obligations, delaying asset accumulation.`,
-      recommendation:
-        savingsRate > 0.2
-          ? 'Automate monthly SIP transfers into broad index ETFs on salary credit day to eliminate idle cash drag.'
-          : 'Focus on retiring high-interest debt first to instantly unlock recurring investment firepower.',
-    },
-    {
-      id: 'risk',
-      name: 'Risk & Exposure Agent',
-      icon: '🛡️',
-      color: '#6366F1',
-      score: Math.max(25, Math.min(99, Math.round((creditScore / 900) * 60 + (1 - Math.min(1, dtiRatio)) * 40))),
-      status: dtiRatio > 0.4 ? 'Elevated Debt Drag' : creditScore >= 750 ? 'Prime Risk Tier' : 'Moderate Exposure',
-      headline: `DTI: ${(dtiRatio * 100).toFixed(1)}% • Credit Score: ${creditScore}`,
-      analysis:
-        dtiRatio > 0.4
-          ? `Debt-to-Income is ${Math.round(dtiRatio * 100)}%, exceeding the recommended 35% ceiling. A significant portion of cashflow is locked in debt service.`
-          : creditScore >= 750
-          ? `Prime credit profile with strong repayment stability. Loan exposure is well-managed with minimal distress likelihood.`
-          : `Credit score at ${creditScore}. Manageable leverage, but maintaining zero late payments is critical to secure competitive borrowing rates.`,
-      recommendation:
-        dtiRatio > 0.35
-          ? 'Target accelerated principal pre-payments on your largest EMI to lower interest drag.'
-          : 'Maintain credit card utilization under 30% to push credit rating above 800.',
-    },
-    {
-      id: 'goal',
-      name: 'Milestone & Horizon Agent',
-      icon: '🎯',
-      color: '#8B5CF6',
-      score: Math.max(30, Math.min(96, Math.round(Math.min(1, Math.max(0, savings * 12) / 300000) * 100))),
-      status: savings > 25000 ? 'Milestone Ready' : 'Phased Progression',
-      headline: `${savings > 0 ? 'Surplus Positive' : 'Deficit Risk'} Over 12M Horizon`,
-      analysis:
-        savings > 25000
-          ? 'Trajectory confirms solid viability for mid-term targets such as home down payment, higher education, or emergency cushion.'
-          : 'Major life decisions requiring upfront capital expenditure will require debt financing or timeline postponement.',
-      recommendation:
-        savings > 20000
-          ? 'Ring-fence a dedicated 6-month liquid emergency fund before committing capital to illiquid assets.'
-          : 'Postpone large non-essential purchases until monthly surplus consistently clears 15% of net income.',
-    },
+    return {
+      status: 'success',
+      bank_detected: 'PhonePe UPI (Sample CSV)',
+      filename: 'sample_phonepe_upi_export.csv',
+      transaction_count: txns.length,
+      transactions: txns,
+      monthly_aggregates: [
+        {
+          month: '2024-06',
+          active_income: 45000,
+          passive_income: 0,
+          money_spent: 33719,
+          emi_monthly: 0,
+          miscellaneous_charges: 0,
+          investment: 10000,
+          total_income: 45000,
+          total_outflow: 33719,
+          net_savings: 11281,
+          transaction_count: 10,
+          transactions: txns,
+        },
+      ],
+    };
+  }
+
+  // Default: HDFC Multi-month statement
+  const hdfcTxns = [
+    { date: '2024-05-01', month: '2024-05', narration: 'ACH/INFOSYS LTD/SALARY/MAY2024', type: 'credit', amount: 105000, balance: 145000, category: 'active_income', subcategory: 'Salary / Professional Income', confidence: 0.98 },
+    { date: '2024-05-02', month: '2024-05', narration: 'NACH/HDFC HOME LOAN/EMI-4091823', type: 'debit', amount: 28500, balance: 116500, category: 'emi_monthly', subcategory: 'Loan EMI / Credit Payment', confidence: 0.95 },
+    { date: '2024-05-03', month: '2024-05', narration: 'UPI/SWIGGY/4058291039/FOOD', type: 'debit', amount: 540, balance: 115960, category: 'money_spent', subcategory: 'Food & Dining', confidence: 0.95 },
+    { date: '2024-05-05', month: '2024-05', narration: 'UPI/ZEPTO/382910382/GROCERY', type: 'debit', amount: 1250, balance: 114710, category: 'money_spent', subcategory: 'Groceries & Essentials', confidence: 0.95 },
+    { date: '2024-05-08', month: '2024-05', narration: 'UPI/UBER INDIA/RIDE-TRIP-92', type: 'debit', amount: 380, balance: 114330, category: 'money_spent', subcategory: 'Transport & Travel', confidence: 0.95 },
+    { date: '2024-05-10', month: '2024-05', narration: 'ACH/ZERODHA BROKING/KITE-SIP', type: 'debit', amount: 15000, balance: 99330, category: 'investment', subcategory: 'Investments & Mutual Funds', confidence: 0.95 },
+    { date: '2024-05-12', month: '2024-05', narration: 'UPI/BESCOM ELECTRICITY BILL/BANGALORE', type: 'debit', amount: 2400, balance: 96930, category: 'money_spent', subcategory: 'Utilities & Bills', confidence: 0.95 },
+    { date: '2024-05-15', month: '2024-05', narration: 'UPI/AMAZON SELLER SERVICES/SHOPPING', type: 'debit', amount: 4200, balance: 92730, category: 'money_spent', subcategory: 'Shopping & E-Commerce', confidence: 0.93 },
+    { date: '2024-05-18', month: '2024-05', narration: 'UPI/ZOMATO RESTAURANT/DINING', type: 'debit', amount: 1450, balance: 91280, category: 'money_spent', subcategory: 'Food & Dining', confidence: 0.95 },
+    { date: '2024-05-20', month: '2024-05', narration: 'DIVIDEND CREDIT/TCS LIMITED/DIV2024', type: 'credit', amount: 3500, balance: 94780, category: 'passive_income', subcategory: 'Dividends & Interest', confidence: 0.95 },
+    { date: '2024-05-25', month: '2024-05', narration: 'DEBIT CARD ANNUAL MAINTENANCE CHARGES + GST', type: 'debit', amount: 590, balance: 94190, category: 'miscellaneous_charges', subcategory: 'Bank Charges & Penalties', confidence: 0.94 },
+    { date: '2024-05-28', month: '2024-05', narration: 'UPI/APOLLO PHARMACY/HEALTH', type: 'debit', amount: 890, balance: 93300, category: 'money_spent', subcategory: 'Groceries & Essentials', confidence: 0.95 },
+
+    { date: '2024-06-01', month: '2024-06', narration: 'ACH/INFOSYS LTD/SALARY/JUNE2024', type: 'credit', amount: 105000, balance: 198300, category: 'active_income', subcategory: 'Salary / Professional Income', confidence: 0.98 },
+    { date: '2024-06-02', month: '2024-06', narration: 'NACH/HDFC HOME LOAN/EMI-4091823', type: 'debit', amount: 28500, balance: 169800, category: 'emi_monthly', subcategory: 'Loan EMI / Credit Payment', confidence: 0.95 },
+    { date: '2024-06-04', month: '2024-06', narration: 'UPI/BLINKIT/QUICK COMMERCE', type: 'debit', amount: 1100, balance: 168700, category: 'money_spent', subcategory: 'Groceries & Essentials', confidence: 0.95 },
+    { date: '2024-06-06', month: '2024-06', narration: 'UPI/AIRTEL BROADBAND/FIBER BILL', type: 'debit', amount: 1179, balance: 167521, category: 'money_spent', subcategory: 'Utilities & Bills', confidence: 0.95 },
+    { date: '2024-06-09', month: '2024-06', narration: 'ACH/ZERODHA BROKING/KITE-SIP', type: 'debit', amount: 15000, balance: 152521, category: 'investment', subcategory: 'Investments & Mutual Funds', confidence: 0.95 },
+    { date: '2024-06-11', month: '2024-06', narration: 'UPI/DECATHLON SPORTS/FITNESS', type: 'debit', amount: 3400, balance: 149121, category: 'money_spent', subcategory: 'Shopping & E-Commerce', confidence: 0.93 },
+    { date: '2024-06-14', month: '2024-06', narration: 'UPI/SWIGGY/492018301/DINNER', type: 'debit', amount: 720, balance: 148401, category: 'money_spent', subcategory: 'Food & Dining', confidence: 0.95 },
+    { date: '2024-06-16', month: '2024-06', narration: 'UPI/HPCL PETROL BUNK/FUEL', type: 'debit', amount: 2800, balance: 145601, category: 'money_spent', subcategory: 'Transport & Travel', confidence: 0.95 },
+    { date: '2024-06-20', month: '2024-06', narration: 'FD INTEREST CREDITED/HDFC BANK FD-8921', type: 'credit', amount: 4200, balance: 149801, category: 'passive_income', subcategory: 'Dividends & Interest', confidence: 0.95 },
+    { date: '2024-06-24', month: '2024-06', narration: 'SMS CHARGES QUARTERLY + GST', type: 'debit', amount: 23.6, balance: 149777.4, category: 'miscellaneous_charges', subcategory: 'Bank Charges & Penalties', confidence: 0.94 },
+    { date: '2024-06-27', month: '2024-06', narration: 'UPI/ZOMATO RESTAURANT/FOOD', type: 'debit', amount: 650, balance: 149127.4, category: 'money_spent', subcategory: 'Food & Dining', confidence: 0.95 },
   ];
-}
+
+  return {
+    status: 'success',
+    bank_detected: 'HDFC Bank (Sample E-Statement)',
+    filename: 'sample_hdfc_bank_statement.pdf',
+    transaction_count: hdfcTxns.length,
+    transactions: hdfcTxns,
+    monthly_aggregates: [
+      {
+        month: '2024-06',
+        active_income: 105000,
+        passive_income: 4200,
+        money_spent: 9849,
+        emi_monthly: 28500,
+        miscellaneous_charges: 23.6,
+        investment: 15000,
+        total_income: 109200,
+        total_outflow: 38372.6,
+        net_savings: 70827.4,
+        transaction_count: 11,
+        transactions: hdfcTxns.filter((t) => t.month === '2024-06'),
+      },
+      {
+        month: '2024-05',
+        active_income: 105000,
+        passive_income: 3500,
+        money_spent: 11110,
+        emi_monthly: 28500,
+        miscellaneous_charges: 590,
+        investment: 15000,
+        total_income: 108500,
+        total_outflow: 40200,
+        net_savings: 68300,
+        transaction_count: 12,
+        transactions: hdfcTxns.filter((t) => t.month === '2024-05'),
+      },
+    ],
+  };
+}
+
+export async function localParseStatement(file, password = null) {
+  const isPdf = file?.name?.toLowerCase().endsWith('.pdf');
+  if (isPdf && !password) {
+    return {
+      status: 'password_required',
+      bank_detected: 'Encrypted Indian Bank Statement',
+      hint: 'HDFC / SBI / ICICI password format (e.g. DOB DDMMYYYY or Customer ID).',
+    };
+  }
+  return isPdf ? getLocalSampleStatement('hdfc') : getLocalSampleStatement('phonepe');
+}
+
+// Local-exports remain available for imports that haven't migrated yet.
+export { SCENARIO_PRESETS, MODEL_OPTIONS, simulateLocalScenario, evaluateLocalAgents, demoMonths } from './lib/twinEngine';
