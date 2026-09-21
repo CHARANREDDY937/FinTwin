@@ -2,8 +2,6 @@
 
 **Your AI-powered financial twin.** Upload your monthly finances, ask questions about expenses, savings, loans, and life decisions — FinTwinAI builds a personalized digital twin and forecasts your financial trajectory with explainable AI.
 
-![FinTwinAI Demo](fintwinai-demo.png)
-
 ---
 
 ## What it does

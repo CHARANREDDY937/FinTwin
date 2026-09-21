@@ -42,24 +42,24 @@ export default function FinancialHealthGauge({
   const strokeDashoffset = arcLength - (normalizedScore / 100) * arcLength;
 
   // Curated executive luminous tiers
-  let scoreColor = '#34D399'; // Mint Emerald
-  let gradientStops = ['#059669', '#34D399'];
+  let scoreColor = '#FFD700'; // Gold
+  let gradientStops = ['#FFC107', '#FFD700'];
   let tier = 'Optimal Vitality';
   let tierSub = 'Strong compounding surplus buffer';
 
   if (normalizedScore < 50) {
-    scoreColor = '#FB7185'; // Soft Rose
-    gradientStops = ['#E11D48', '#FB7185'];
+    scoreColor = '#FF0000'; // Bright Red
+    gradientStops = ['#FF0000', '#FF3333'];
     tier = 'High Caution';
     tierSub = 'Elevated debt drag & low surplus';
   } else if (normalizedScore < 70) {
-    scoreColor = '#FB923C'; // Warm Apricot
-    gradientStops = ['#D97706', '#FB923C'];
+    scoreColor = '#FFD700'; // Gold
+    gradientStops = ['#FFC107', '#FFD700'];
     tier = 'Moderate';
     tierSub = 'Stable baseline; optimize discretionary leaks';
   } else if (normalizedScore < 85) {
-    scoreColor = '#A78BFA'; // Luminous Lavender
-    gradientStops = ['#7C3AED', '#A78BFA'];
+    scoreColor = '#FFD700'; // Gold
+    gradientStops = ['#FFC107', '#FFD700'];
     tier = 'Strong';
     tierSub = 'Healthy savings rate & prime credit';
   }

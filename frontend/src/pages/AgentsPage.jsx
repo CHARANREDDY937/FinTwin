@@ -1,14 +1,6 @@
 import React, { useMemo } from 'react';
 import FinancialHealthGauge from '../components/FinancialHealthGauge';
-import { evaluateLocalAgents } from '../api';
-
-function currency(val) {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(val);
-}
+import { evaluateLocalAgents, currency } from '../lib/utils';
 
 export default function AgentsPage({
   profile,
@@ -21,12 +13,12 @@ export default function AgentsPage({
 
   // Overall financial health score
   const healthScore = useMemo(() => {
-    const income = Math.max(profile.income || profile.avgIncome || 1, 1);
-    const savings = Math.max(0, profile.savings || 0);
+    const income = Math.max(profile?.income || profile?.avgIncome || 1, 1);
+    const savings = Math.max(0, profile?.savings || 0);
     const savingsRate = Math.min(1, savings / income);
-    const emi = profile.emi || 0;
+    const emi = profile?.emi || 0;
     const dti = Math.min(1, emi / income);
-    const credit = Math.min(900, Math.max(300, profile.creditScore || 750));
+    const credit = Math.min(900, Math.max(300, profile?.creditScore || 750));
 
     // Weighted composite score: 35% Credit, 40% Savings Rate, 25% Debt headroom
     const creditPart = ((credit - 300) / 600) * 35;
@@ -36,8 +28,8 @@ export default function AgentsPage({
     return Math.round(creditPart + savingsPart + debtPart);
   }, [profile]);
 
-  const savingsRate = profile.income ? (profile.savings / profile.income) * 100 : 0;
-  const dti = profile.income ? (profile.emi / profile.income) * 100 : 0;
+  const savingsRate = profile?.income ? (profile?.savings / profile.income) * 100 : 0;
+  const dti = profile?.income ? (profile?.emi / profile.income) * 100 : 0;
 
   return (
     <div className="page-container agents-page">
@@ -87,13 +79,13 @@ export default function AgentsPage({
 
             <div className="ratio-box">
               <span className="ratio-label">Credit Rating</span>
-              <strong className="ratio-val good">{profile.creditScore || 750}</strong>
+              <strong className="ratio-val good">{profile?.creditScore || 750}</strong>
               <small className="ratio-bench">Prime Tier: &gt; 750</small>
             </div>
 
             <div className="ratio-box">
               <span className="ratio-label">Monthly Surplus</span>
-              <strong className="ratio-val good">{currency(profile.savings || 0)}</strong>
+              <strong className="ratio-val good">{currency(profile?.savings || 0)}</strong>
               <small className="ratio-bench">Net investable buffer</small>
             </div>
           </div>
@@ -153,14 +145,14 @@ export default function AgentsPage({
         <div className="consensus-content">
           <p>
             Your digital twin exhibits a <strong>{healthScore >= 75 ? 'robust and resilient' : 'moderate with growth potential'}</strong> financial profile.
-            With a monthly net inflow of <strong>{currency(profile.income || 0)}</strong> and total monthly obligations of{' '}
-            <strong>{currency(profile.outflow || 0)}</strong>, your retained capital clears expenses with a{' '}
+            With a monthly net inflow of <strong>{currency(profile?.income || 0)}</strong> and total monthly obligations of{' '}
+            <strong>{currency(profile?.outflow || 0)}</strong>, your retained capital clears expenses with a{' '}
             <strong>{savingsRate.toFixed(1)}%</strong> surplus cushion.
           </p>
           <div className="consensus-pillars">
             <div className="pillar-item">
               <span className="pillar-check">✓</span>
-              <span><strong>Spending Discipline:</strong> Outflow is maintained under {profile.income ? Math.round((profile.outflow / profile.income) * 100) : 0}% of net earnings.</span>
+              <span><strong>Spending Discipline:</strong> Outflow is maintained under {profile?.income ? Math.round((profile?.outflow / profile.income) * 100) : 0}% of net earnings.</span>
             </div>
             <div className="pillar-item">
               <span className="pillar-check">✓</span>

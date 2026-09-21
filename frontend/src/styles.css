@@ -119,92 +119,92 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   CSS Design Tokens — Dark Mode (Refined Midnight Obsidian & Luminous Accents)
+   CSS Design Tokens — Dark Mode (Black, Gold & Red)
 ───────────────────────────────────────────────────────────── */
 [data-theme='dark'] {
   color-scheme: dark;
 
-  /* Rich, Deep Midnight Obsidian Surfaces (Layered depth, not flat pitch black) */
-  --bg-app: #080B11;
-  --bg-surface: #0E1424;
-  --bg-surface-solid: #0E1424;
-  --bg-surface-hover: #151D33;
-  --bg-card: #0E1424;
-  --bg-elevated: #162038;
-  --bg-input: #0A0E18;
+  /* Pure Black Surfaces (Layered depth, not flat pitch black) */
+  --bg-app: #000000;
+  --bg-surface: #0A0A0A;
+  --bg-surface-solid: #0A0A0A;
+  --bg-surface-hover: #141414;
+  --bg-card: #0A0A0A;
+  --bg-elevated: #111111;
+  --bg-input: #050505;
 
   /* Crisp, Calibrated Typography (WCAG AAA High Contrast) */
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --text-inverse: #080B11;
+  --text-primary: #FFFFFF;
+  --text-secondary: #C0C0C0;
+  --text-muted: #888888;
+  --text-inverse: #000000;
 
-  /* Luminous, Curated Brand Accents (FinTwin Signature Harmony) */
-  --color-lavender: #A78BFA;
-  --color-lavender-hover: #C4B5FD;
-  --color-lavender-light: rgba(167, 139, 250, 0.12);
-  --color-lavender-border: rgba(167, 139, 250, 0.28);
+  /* Gold & Red Brand Accents */
+  --color-lavender: #D4AF37;
+  --color-lavender-hover: #F0D060;
+  --color-lavender-light: rgba(212, 175, 55, 0.15);
+  --color-lavender-border: rgba(212, 175, 55, 0.35);
 
-  --color-apricot: #FB923C;
-  --color-apricot-hover: #FDBA74;
-  --color-apricot-light: rgba(251, 146, 60, 0.12);
-  --color-apricot-border: rgba(251, 146, 60, 0.28);
+  --color-apricot: #FFD700;
+  --color-apricot-hover: #FFE34D;
+  --color-apricot-light: rgba(255, 215, 0, 0.15);
+  --color-apricot-border: rgba(255, 215, 0, 0.35);
 
-  --color-pink: #F472B6;
-  --color-pink-hover: #F9A8D4;
-  --color-pink-light: rgba(244, 114, 182, 0.12);
-  --color-pink-border: rgba(244, 114, 182, 0.28);
+  --color-pink: #FF0000;
+  --color-pink-hover: #FF3333;
+  --color-pink-light: rgba(255, 0, 0, 0.15);
+  --color-pink-border: rgba(255, 0, 0, 0.35);
 
-  --color-sage: #34D399;
-  --color-sage-hover: #6EE7B7;
-  --color-sage-light: rgba(52, 211, 153, 0.12);
-  --color-sage-border: rgba(52, 211, 153, 0.28);
+  --color-sage: #FFD700;
+  --color-sage-hover: #FFE34D;
+  --color-sage-light: rgba(255, 215, 0, 0.15);
+  --color-sage-border: rgba(255, 215, 0, 0.35);
 
   /* Primary Theme Aliases */
-  --color-primary: #A78BFA;
-  --color-primary-hover: #C4B5FD;
-  --color-primary-light: rgba(167, 139, 250, 0.12);
-  --color-primary-glow: rgba(167, 139, 250, 0.25);
+  --color-primary: #D4AF37;
+  --color-primary-hover: #F0D060;
+  --color-primary-light: rgba(212, 175, 55, 0.15);
+  --color-primary-glow: rgba(212, 175, 55, 0.30);
 
-  --color-emerald: #34D399;
-  --color-emerald-light: rgba(52, 211, 153, 0.12);
-  --color-amber: #FBBF24;
-  --color-amber-light: rgba(251, 191, 36, 0.12);
-  --color-coral: #FB923C;
-  --color-rose: #FB7185;
-  --color-rose-light: rgba(251, 113, 133, 0.12);
+  --color-emerald: #FFD700;
+  --color-emerald-light: rgba(255, 215, 0, 0.15);
+  --color-amber: #FFC107;
+  --color-amber-light: rgba(255, 193, 7, 0.15);
+  --color-coral: #FFD700;
+  --color-rose: #FF0000;
+  --color-rose-light: rgba(255, 0, 0, 0.15);
   --color-cyan: #38BDF8;
-  --color-violet: #A78BFA;
+  --color-violet: #D4AF37;
 
-  /* Executive Brand Gradients (Luminous Violet to Warm Coral Glow) */
-  --gradient-primary: linear-gradient(135deg, #8B5CF6 0%, #EA580C 100%);
-  --gradient-lavender-pink: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
-  --gradient-warm: linear-gradient(135deg, #EA580C 0%, #F59E0B 100%);
-  --gradient-sage: linear-gradient(135deg, #10B981 0%, #14B8A6 100%);
-  --gradient-surface: linear-gradient(180deg, #101626 0%, #0A0E18 100%);
+  /* Executive Brand Gradients (Gold to Bright Red Glow) */
+  --gradient-primary: linear-gradient(135deg, #D4AF37 0%, #FF0000 100%);
+  --gradient-lavender-pink: linear-gradient(135deg, #D4AF37 0%, #FF0000 100%);
+  --gradient-warm: linear-gradient(135deg, #FFD700 0%, #FF0000 100%);
+  --gradient-sage: linear-gradient(135deg, #D4AF37 0%, #FFC107 100%);
+  --gradient-surface: linear-gradient(180deg, #0A0A0A 0%, #000000 100%);
 
   /* Architectural Glass Borders */
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-medium: rgba(255, 255, 255, 0.15);
-  --border-focus: #A78BFA;
+  --border-focus: #D4AF37;
   --border-inner: rgba(255, 255, 255, 0.04);
 
   /* Deep Atmospheric Glow Shadows */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 14px -1px rgba(0, 0, 0, 0.6), 0 2px 6px -1px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 12px 28px -4px rgba(0, 0, 0, 0.7), 0 4px 10px -2px rgba(0, 0, 0, 0.35);
-  --shadow-popup: 0 20px 40px -6px rgba(0, 0, 0, 0.85);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.7), 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 4px 14px -1px rgba(0, 0, 0, 0.8), 0 2px 6px -1px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 28px -4px rgba(0, 0, 0, 0.9), 0 4px 10px -2px rgba(0, 0, 0, 0.7);
+  --shadow-popup: 0 20px 40px -6px rgba(0, 0, 0, 0.95);
 
-  --gauge-track: #151D33;
-  --tooltip-bg: #0E1424;
+  --gauge-track: #141414;
+  --tooltip-bg: #0A0A0A;
   --tooltip-border: rgba(255, 255, 255, 0.12);
 }
 
 [data-theme='dark'] body {
   background:
-    radial-gradient(ellipse 70% 40% at 50% -10%, rgba(139, 92, 246, 0.12), transparent),
-    radial-gradient(ellipse 50% 30% at 100% 70%, rgba(234, 88, 12, 0.05), transparent),
+    radial-gradient(ellipse 70% 40% at 50% -10%, rgba(212, 175, 55, 0.12), transparent),
+    radial-gradient(ellipse 50% 30% at 100% 70%, rgba(255, 0, 0, 0.08), transparent),
     var(--bg-app);
   background-attachment: fixed;
 }
@@ -1030,8 +1030,8 @@ label {
   height: 10px;
   border-radius: 2px;
 }
-.baseline-swatch { background: #8B5CF6; }
-.scenario-swatch { background: #FB923C; }
+.baseline-swatch { background: #FF0000; }
+.scenario-swatch { background: #FFD700; }
 
 /* Sandbox Impact Delta Strip */
 .sandbox-impact-strip {

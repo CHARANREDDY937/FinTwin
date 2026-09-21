@@ -221,7 +221,7 @@ export default function RecordsPage({
       {/* Header Banner */}
       <div className="page-header-banner animate-in" style={{ '--delay': '0ms' }}>
         <div className="header-eyebrow">
-          <FileSpreadsheet size={15} color="#A78BFA" />
+          <FileSpreadsheet size={15} color="#FFD700" />
           <span>Financial Data Ledger • Ground Truth</span>
         </div>
         <div className="header-flex-row">
@@ -300,7 +300,7 @@ export default function RecordsPage({
             <div className="card-sub">Living + EMI + Misc</div>
           </div>
 
-          <div className="summary-kpi-card" style={{ '--card-accent': '#A78BFA', '--card-glow': 'rgba(167, 139, 250, 0.15)' }}>
+          <div className="summary-kpi-card" style={{ '--card-accent': '#FF0000', '--card-glow': 'rgba(255, 0, 0, 0.15)' }}>
             <div className="card-top">
               <div className="card-icon-wrap">
                 <Landmark size={18} />

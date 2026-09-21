@@ -1,15 +1,23 @@
 {
   "name": "fintwin",
   "version": "1.0.0",
-  "description": "Project layout:",
-  "main": "index.js",
+  "private": true,
+  "description": "FinTwinAI - Financial Digital Twin Platform",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && uvicorn app:app --reload",
+    "build:frontend": "cd frontend && npm run build",
+    "test:frontend": "cd frontend && npm run test:run",
+    "test:backend": "cd backend && python -m pytest",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && ruff check .",
+    "format:backend": "cd backend && ruff format ."
   },
-  "keywords": [],
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "keywords": ["fintech", "financial-planning", "digital-twin", "ai"],
   "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "playwright": "^1.63.0"
-  }
+  "license": "ISC"
 }

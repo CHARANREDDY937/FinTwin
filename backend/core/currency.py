@@ -18,10 +18,10 @@ def convert_inr_to_usd(amount_inr: float) -> float:
 def ensure_inr(text: str) -> str:
     """
     Normalizes monetary output for the Indian financial context:
-    1. If the text already has an intentional currency conversion or explicit USD context
+    1. If the text has intentional currency conversion or explicit USD context
        (e.g., '1 USD = 95.91 INR', '$990.51 USD', 'in dollars: $100'), it preserves it.
     2. Any mislabeled dollar signs on user profile quantities (e.g. '$95,000' for a ₹95,000 salary)
-       are corrected to '₹95,000'.
+       are corrected to '₹95,000' (same value, symbol change only).
     3. Cleans up any double symbols (₹₹ -> ₹).
     """
     if not text:
@@ -39,18 +39,15 @@ def ensure_inr(text: str) -> str:
         tokens[token] = match.group(0)
         return token
 
-    # Match intentional exchange rate patterns:
-    # e.g. "1 USD = 95.91 INR", "1 USD = ₹95.91", "$1 = ₹95.91", "$1 USD = 95.91 INR"
+    # Match intentional exchange rate patterns
     rate_pattern = r"(?:1\s*(?:USD|\$)\s*=\s*(?:₹|INR\s*)?95\.91(?:\s*INR)?|95\.91\s*(?:INR|rupees)\s*(?:per|=|to)\s*(?:USD|dollar|\$1))"
     cleaned = re.sub(rate_pattern, stash_match, cleaned, flags=re.IGNORECASE)
 
-    # Match intentional dual-currency expressions:
-    # e.g. "approximately $990 USD", "$100 USD", "$100.50 USD"
+    # Match intentional dual-currency expressions
     dual_pattern = r"\$\s*\d[\d,]*(?:\.\d+)?\s*(?:USD|dollars?)\b"
     cleaned = re.sub(dual_pattern, stash_match, cleaned, flags=re.IGNORECASE)
 
-    # Convert any remaining mislabeled $ figures to ₹:
-    # e.g. "$10,000", "$ 95,000", "$100,000", "$750" -> "₹10,000", "₹95,000", "₹100,000", "₹750"
+    # Convert any remaining mislabeled $ figures to ₹ (same value, symbol change)
     cleaned = re.sub(r"\$\s*(\d[\d,]*(?:\.\d+)?)", r"₹\1", cleaned)
 
     # Standalone '$' -> '₹'
@@ -60,7 +57,7 @@ def ensure_inr(text: str) -> str:
     for token, original in tokens.items():
         cleaned = cleaned.replace(token, original)
 
-    # Deduplicate double symbols (e.g. ₹₹10,000 -> ₹10,000)
+    # Deduplicate double symbols
     cleaned = re.sub(r"₹\s*₹+", "₹", cleaned)
 
     return cleaned

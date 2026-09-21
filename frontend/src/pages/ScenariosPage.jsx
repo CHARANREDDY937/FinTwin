@@ -9,20 +9,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import {
-  SCENARIO_PRESETS,
-  MODEL_OPTIONS,
-  simulateLocalScenario,
-  simulateScenarioAPI,
-} from '../api';
-
-function currency(val) {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(val);
-}
+import { simulateScenarioAPI } from '../api';
+import { SCENARIO_PRESETS, MODEL_OPTIONS, simulateLocalScenario, currency } from '../lib/utils';
 
 export default function ScenariosPage({
   profile,
@@ -261,8 +249,8 @@ export default function ScenariosPage({
             <AreaChart data={combinedChartData} margin={{ top: 20, right: 25, left: 15, bottom: 10 }}>
               <defs>
                 <linearGradient id="baselineGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366F1" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#6366F1" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="#FF0000" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#FF0000" stopOpacity={0.0} />
                 </linearGradient>
                 <linearGradient id="scenarioGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor={scenario.color} stopOpacity={0.5} />
