@@ -1,6 +1,5 @@
-<<<<<<< HEAD
 // API client for the FinTwinAI backend.
-// Network helpers only — the deterministic "local twin" simulation engines
+// Network helpers only â€” the deterministic "local twin" simulation engines
 // live in src/lib/twinEngine.js (with SCENARIO_PRESETS/MODEL_OPTIONS etc).
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -47,10 +46,6 @@ async function request(path, { method = 'GET', body, timeout = DEFAULT_TIMEOUT, 
 }
 
 // Convert camelCase month objects to snake_case FinancialMonth schema.
-=======
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-
->>>>>>> be8097af00555534dec710f1a0883e9efc38d2f6
 export function toBackendMonth(month) {
   return {
     month: month.month,
@@ -61,19 +56,27 @@ export function toBackendMonth(month) {
     emi_monthly: Number(month.emiMonthly) || 0,
     miscellaneous_charges: Number(month.miscellaneousCharges) || 0,
     money_spent: Number(month.moneySpent) || 0,
-<<<<<<< HEAD
     transactions: month.transactions || [],
-=======
->>>>>>> be8097af00555534dec710f1a0883e9efc38d2f6
   };
 }
 
 export async function askChat(question, months, horizon = 12, model = 'xgboost', scenario = 'baseline') {
-<<<<<<< HEAD
   return request('/chat', {
     method: 'POST',
     body: { question, months: months.map(toBackendMonth), horizon, model, scenario },
   });
+}
+
+
+export async function fetchTwinProfile(months) {
+  return request('/twin/profile', {
+    method: 'POST',
+    body: months.map(toBackendMonth),
+  });
+}
+
+export async function fetchDatasetsSummary() {
+  return request('/datasets/summary', { auth: false });
 }
 
 export async function simulateScenarioAPI(months, scenario = 'baseline', model = 'xgboost', horizon = 12) {
@@ -97,66 +100,6 @@ export async function loginUser(email, password) {
     auth: false,
     body: { email, password },
   });
-=======
-  const response = await fetch(`${API_BASE}/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      question,
-      months: months.map(toBackendMonth),
-      horizon,
-      model,
-      scenario,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Chat API failed with status ${response.status}`);
-  }
-
-  return response.json();
-}
-
-export async function fetchTwinProfile(months) {
-  const response = await fetch(`${API_BASE}/twin/profile`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(months.map(toBackendMonth)),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Twin profile API failed with status ${response.status}`);
-  }
-
-  return response.json();
-}
-
-export async function simulateScenarioAPI(months, scenario = 'baseline', model = 'xgboost', horizon = 12) {
-  const response = await fetch(`${API_BASE}/forecast/scenario`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      months: months.map(toBackendMonth),
-      scenario,
-      model,
-      horizon,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Scenario simulation failed with status ${response.status}`);
-  }
-
-  return response.json();
-}
-
-export async function fetchDatasetsSummary() {
-  const response = await fetch(`${API_BASE}/datasets/summary`);
-  if (!response.ok) {
-    throw new Error(`Datasets summary failed with status ${response.status}`);
-  }
-  return response.json();
->>>>>>> be8097af00555534dec710f1a0883e9efc38d2f6
 }
 
 export async function healthCheck() {
@@ -172,10 +115,9 @@ export async function healthCheck() {
   }
 }
 
-<<<<<<< HEAD
-/* ─────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Statement & UPI Ingestion APIs
-   ───────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 export async function ingestStatementAPI(file, password = null) {
   const formData = new FormData();
@@ -340,32 +282,3 @@ export async function localParseStatement(file, password = null) {
 
 // Local-exports remain available for imports that haven't migrated yet.
 export { SCENARIO_PRESETS, MODEL_OPTIONS, simulateLocalScenario, evaluateLocalAgents, demoMonths } from './lib/twinEngine';
-=======
-export async function registerUser(email, name, password) {
-  const response = await fetch(`${API_BASE}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, name, password }),
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.detail || `Register failed with status ${response.status}`);
-  }
-  return data;
-}
-
-export async function loginUser(email, password) {
-  const response = await fetch(`${API_BASE}/auth/login-json`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.detail || `Login failed with status ${response.status}`);
-  }
-  return data;
-}
->>>>>>> be8097af00555534dec710f1a0883e9efc38d2f6

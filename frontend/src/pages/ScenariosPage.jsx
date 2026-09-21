@@ -9,7 +9,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-<<<<<<< HEAD
 import {
   SCENARIO_PRESETS,
   MODEL_OPTIONS,
@@ -24,10 +23,7 @@ function currency(val) {
     maximumFractionDigits: 0,
   }).format(val);
 }
-=======
-import { simulateScenarioAPI } from '../api';
-import { SCENARIO_PRESETS, MODEL_OPTIONS, simulateLocalScenario, currency } from '../lib/utils';
->>>>>>> be8097af00555534dec710f1a0883e9efc38d2f6
+
 
 export default function ScenariosPage({
   profile,

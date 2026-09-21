@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import FinancialHealthGauge from '../components/FinancialHealthGauge';
-<<<<<<< HEAD
 import { evaluateLocalAgents } from '../api';
 import { usePageTitle } from '../lib/hooks';
 
@@ -11,9 +10,7 @@ function currency(val) {
     maximumFractionDigits: 0,
   }).format(val);
 }
-=======
-import { evaluateLocalAgents, currency } from '../lib/utils';
->>>>>>> be8097af00555534dec710f1a0883e9efc38d2f6
+
 
 export default function AgentsPage({
   profile,
