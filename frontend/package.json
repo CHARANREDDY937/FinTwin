@@ -7,12 +7,22 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+<<<<<<< HEAD
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,css}\" \"*.js\" \"*.config.js\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,css}\" \"*.js\" \"*.config.js\"",
     "test": "vitest run",
     "test:watch": "vitest"
+=======
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "lint": "eslint src --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint src --ext js,jsx --fix"
+>>>>>>> be8097af00555534dec710f1a0883e9efc38d2f6
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -33,6 +43,7 @@
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
     "@vitejs/plugin-react": "^4.3.2",
+<<<<<<< HEAD
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
@@ -41,5 +52,19 @@
     "prettier": "^3.3.3",
     "vite": "^5.4.10",
     "vitest": "^2.1.8"
+=======
+    "vite": "^5.4.10",
+    "vitest": "^2.1.8",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "jsdom": "^25.0.1",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "@eslint/js": "^9.17.0",
+    "globals": "^15.14.0",
+    "@playwright/test": "^1.49.1"
+>>>>>>> be8097af00555534dec710f1a0883e9efc38d2f6
   }
 }

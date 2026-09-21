@@ -54,10 +54,10 @@ function ensureRupees(text) {
 }
 
 const graphViews = [
-  { id: 'expense', label: 'Expenses', color: '#FB7185', icon: TrendingDown },
-  { id: 'income', label: 'Income', color: '#34D399', icon: TrendingUp },
-  { id: 'savings', label: 'Savings', color: '#A78BFA', icon: Landmark },
-  { id: 'netWorth', label: 'Net Worth', color: '#38BDF8', icon: Sparkles },
+  { id: 'expense', label: 'Expenses', color: '#FF0000', icon: TrendingDown },
+  { id: 'income', label: 'Income', color: '#FFD700', icon: TrendingUp },
+  { id: 'savings', label: 'Savings', color: '#FFD700', icon: Landmark },
+  { id: 'netWorth', label: 'Net Worth', color: '#FF0000', icon: Sparkles },
 ];
 
 const spanOptions = [6, 12, 24, 36, 60];
@@ -88,7 +88,7 @@ function CustomGlassTooltip({ active, payload, label }) {
         <div className="tooltip-row">
           <span
             className="tooltip-indicator"
-            style={{ backgroundColor: data.color || data.fill || '#A78BFA' }}
+            style={{ backgroundColor: data.color || data.fill || '#FFD700' }}
           />
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 500 }}>
             {data.name || 'Value'}:
@@ -230,7 +230,7 @@ export default function ChatPage({
           <div className="sidebar-top">
             <div className="sidebar-heading-row">
               <span className="sidebar-icon">
-                <Clock size={16} color="#A78BFA" />
+                <Clock size={16} color="#FFD700" />
               </span>
               <h3>Conversation History</h3>
             </div>
@@ -302,7 +302,7 @@ export default function ChatPage({
           <div className="suggested-prompts-section">
             <div className="prompts-title">
               <span className="prompts-icon">
-                <Sparkles size={14} color="#FB923C" />
+                <Sparkles size={14} color="#FFD700" />
               </span>
               <span>Suggested Twin Queries</span>
             </div>
@@ -383,7 +383,7 @@ export default function ChatPage({
             {chat.length === 0 ? (
               <div className="chat-stream-welcome">
                 <div className="welcome-emblem">
-                  <Sparkles size={34} color="#A78BFA" />
+                  <Sparkles size={34} color="#FFD700" />
                 </div>
                 <h3>Welcome to your AI Financial Twin Studio</h3>
                 <p>
@@ -654,19 +654,19 @@ export default function ChatPage({
           <div className="charts-sidebar-metrics">
             <div className="mini-metric-tile">
               <span className="tile-label">Monthly Outflow</span>
-              <strong className="tile-val">{currency(profile.outflow || 0)}</strong>
+              <strong className="tile-val">{currency(profile?.outflow || 0)}</strong>
             </div>
             <div className="mini-metric-tile">
               <span className="tile-label">Monthly Surplus</span>
-              <strong className="tile-val good">{currency(profile.savings || 0)}</strong>
+              <strong className="tile-val good">{currency(profile?.savings || 0)}</strong>
             </div>
             <div className="mini-metric-tile">
               <span className="tile-label">DTI Ratio</span>
-              <strong className="tile-val">{profile.income ? ((profile.emi / profile.income) * 100).toFixed(0) : 0}%</strong>
+              <strong className="tile-val">{profile?.income ? ((profile.emi / profile.income) * 100).toFixed(0) : 0}%</strong>
             </div>
             <div className="mini-metric-tile">
               <span className="tile-label">Credit Score</span>
-              <strong className="tile-val prime">{profile.creditScore || 'N/A'}</strong>
+              <strong className="tile-val prime">{profile?.creditScore || 'N/A'}</strong>
             </div>
           </div>
         </aside>

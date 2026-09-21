@@ -36,38 +36,38 @@ import {
 import { usePageTitle } from './lib/hooks';
 
 const graphViews = [
-  { id: 'expense', label: 'Expenses', color: '#FB7185', icon: TrendingDown },
-  { id: 'income', label: 'Income', color: '#34D399', icon: TrendingUp },
-  { id: 'savings', label: 'Savings', color: '#A78BFA', icon: Landmark },
-  { id: 'netWorth', label: 'Net Worth', color: '#38BDF8', icon: Sparkles },
+  { id: 'expense', label: 'Expenses', color: '#FF0000', icon: TrendingDown },
+  { id: 'income', label: 'Income', color: '#FFD700', icon: TrendingUp },
+  { id: 'savings', label: 'Savings', color: '#FFD700', icon: Landmark },
+  { id: 'netWorth', label: 'Net Worth', color: '#FF0000', icon: Sparkles },
 ];
 
 const cardMeta = {
   expense: {
     icon: TrendingDown,
-    accent: '#FB7185',
-    glow: 'rgba(251, 113, 133, 0.22)',
+    accent: '#FF0000',
+    glow: 'rgba(255, 0, 0, 0.22)',
     trend: 'Controlled burn rate',
     trendType: 'neutral',
   },
   income: {
     icon: TrendingUp,
-    accent: '#34D399',
-    glow: 'rgba(52, 211, 153, 0.22)',
+    accent: '#FFD700',
+    glow: 'rgba(255, 215, 0, 0.22)',
     trend: '+8.4% projected trend',
     trendType: 'positive',
   },
   savings: {
     icon: Landmark,
-    accent: '#A78BFA',
-    glow: 'rgba(167, 139, 250, 0.22)',
+    accent: '#FFD700',
+    glow: 'rgba(255, 215, 0, 0.22)',
     trend: 'Positive surplus rate',
     trendType: 'positive',
   },
   netWorth: {
     icon: Sparkles,
-    accent: '#38BDF8',
-    glow: 'rgba(56, 189, 248, 0.22)',
+    accent: '#FFD700',
+    glow: 'rgba(255, 215, 0, 0.22)',
     trend: 'Compounding trajectory',
     trendType: 'info',
   },
@@ -136,8 +136,8 @@ export default function DashboardPage({
 
   const activeView = graphViews.find((v) => v.id === graphMetric) || graphViews[0];
   const ActiveIcon = activeView.icon;
-  const savingsRate = profile.income ? ((profile.savings / profile.income) * 100).toFixed(1) : 0;
-  const dti = profile.income ? ((profile.emi / profile.income) * 100).toFixed(1) : 0;
+  const savingsRate = profile?.income ? ((profile.savings / profile.income) * 100).toFixed(1) : 0;
+  const dti = profile?.income ? ((profile.emi / profile.income) * 100).toFixed(1) : 0;
 
   const handleLoadDemo = () => {
     setMonths(
@@ -179,7 +179,7 @@ export default function DashboardPage({
             <div className="strip-divider" />
             <div className="strip-item">
               <span className="strip-label">Credit Rating</span>
-              <strong className="strip-val good">{profile.creditScore || 'N/A'}</strong>
+              <strong className="strip-val good">{profile?.creditScore || 'N/A'}</strong>
             </div>
           </div>
         </div>
@@ -233,7 +233,7 @@ export default function DashboardPage({
       {months.length === 0 && (
         <div className="demo-prompt-banner">
           <div className="prompt-icon">
-            <Sparkles size={20} color="#FB923C" />
+            <Sparkles size={20} color="#FFD700" />
           </div>
           <div className="prompt-text">
             <h4>No financial months uploaded yet</h4>
@@ -488,7 +488,7 @@ export default function DashboardPage({
               </span>
               <div className="mini-info">
                 <strong>Investment Agent:</strong>
-                <span>{currency(profile.savings || 0)} monthly investable surplus</span>
+                <span>{currency(profile?.savings || 0)} monthly investable surplus</span>
               </div>
             </div>
             <div className="mini-agent-row">
@@ -497,7 +497,7 @@ export default function DashboardPage({
               </span>
               <div className="mini-info">
                 <strong>Risk Agent:</strong>
-                <span>DTI {dti}% • Prime score {profile.creditScore || 750}</span>
+                <span>DTI {dti}% • Prime score {profile?.creditScore || 750}</span>
               </div>
             </div>
             <div className="mini-agent-row">

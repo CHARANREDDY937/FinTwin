@@ -19,16 +19,9 @@ import {
   MODEL_OPTIONS,
   simulateLocalScenario,
   evaluateLocalAgents,
-} from '../api';
+  currency,
+} from '../lib/utils';
 import './LandingPage.css';
-
-function currency(val) {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(val || 0);
-}
 
 export default function LandingPage({
   user,
@@ -119,8 +112,8 @@ export default function LandingPage({
 
   // Health score
   const healthScore = Math.min(100, Math.max(25, Math.round(
-    ((profile.savings || 35000) / Math.max(1, profile.income || 107000)) * 60 +
-    ((profile.creditScore || 765) / 900) * 40
+    ((profile?.savings || 35000) / Math.max(1, profile?.income || 107000)) * 60 +
+    ((profile?.creditScore || 765) / 900) * 40
   )));
 
   const quickPromptJump = (promptText) => {
@@ -233,19 +226,19 @@ export default function LandingPage({
             <div className="lp-stats-col">
               <div className="lp-stat-tile">
                 <span className="lp-stat-label">Monthly Retained Surplus</span>
-                <strong className="lp-stat-value" style={{ color: 'var(--color-sage)' }}>{currency(profile.savings || 35000)}</strong>
+                <strong className="lp-stat-value" style={{ color: 'var(--color-sage)' }}>{currency(profile?.savings || 35000)}</strong>
                 <span className="lp-stat-trend pos">↑ 12.4% above baseline</span>
               </div>
 
               <div className="lp-stat-tile">
                 <span className="lp-stat-label">Debt-to-Income (DTI)</span>
-                <strong className="lp-stat-value" style={{ color: 'var(--color-apricot)' }}>{profile.income ? Math.round((profile.emi / profile.income) * 100) : 26}%</strong>
+                <strong className="lp-stat-value" style={{ color: 'var(--color-apricot)' }}>{profile?.income ? Math.round((profile?.emi / profile.income) * 100) : 26}%</strong>
                 <span className="lp-stat-trend warn">✓ Healthy debt ceiling (&lt; 35%)</span>
               </div>
 
               <div className="lp-stat-tile">
                 <span className="lp-stat-label">Prime Credit Resilience</span>
-                <strong className="lp-stat-value" style={{ color: 'var(--color-lavender)' }}>{profile.creditScore || 775} / 900</strong>
+                <strong className="lp-stat-value" style={{ color: 'var(--color-lavender)' }}>{profile?.creditScore || 775} / 900</strong>
                 <span className="lp-stat-trend pos">★ Tier-1 Borrower Grade</span>
               </div>
             </div>
@@ -380,12 +373,12 @@ export default function LandingPage({
               <AreaChart data={sandboxChartData} margin={{ top: 15, right: 20, left: 15, bottom: 28 }}>
                 <defs>
                   <linearGradient id="warmBaselineGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#FF0000" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#FF0000" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="warmScenarioGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FB923C" stopOpacity={0.45} />
-                    <stop offset="95%" stopColor="#FB923C" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#FFD700" stopOpacity={0.45} />
+                    <stop offset="95%" stopColor="#FFD700" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="var(--border-subtle, rgba(255,255,255,0.06))" strokeDasharray="3 3" vertical={false} />
@@ -407,7 +400,7 @@ export default function LandingPage({
                 <Area
                   type="monotone"
                   dataKey="baseline"
-                  stroke="#8B5CF6"
+                  stroke="#FF0000"
                   strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#warmBaselineGrad)"
@@ -416,7 +409,7 @@ export default function LandingPage({
                 <Area
                   type="monotone"
                   dataKey="scenario"
-                  stroke="#FB923C"
+                  stroke="#FFD700"
                   strokeWidth={3}
                   strokeDasharray={selectedScenarioKey === 'baseline' ? '' : '5 5'}
                   fillOpacity={1}
@@ -528,7 +521,7 @@ export default function LandingPage({
             <h3>Unified Recommendation: Optimal Compound Growth</h3>
             <p>
               The 4 agents unanimously recommend allocating 45% of monthly retained surplus (
-              {currency((profile.savings || 35000) * 0.45)}) into index equity SIPs while preserving a 6-month
+              {currency((profile?.savings || 35000) * 0.45)}) into index equity SIPs while preserving a 6-month
               emergency buffer to neutralize sudden macroeconomic shocks.
             </p>
           </div>

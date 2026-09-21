@@ -526,10 +526,10 @@ export default function Navbar({
 
   const status =
     backendOnline === true
-      ? { tone: 'online',  label: 'Engine Active', hint: 'Connected to FastAPI Multi-Agent Engine' }
+      ? { tone: 'online',  label: 'Online',     hint: 'Connected to FastAPI Multi-Agent Engine' }
       : backendOnline === false
-      ? { tone: 'offline', label: 'Local Twin',    hint: 'Running in Client-Side Engine Mode' }
-      : { tone: 'ready',   label: 'Ready',         hint: 'Twin Engine Calibrated' };
+      ? { tone: 'offline', label: 'Local Twin',  hint: 'Running in Client-Side Engine Mode' }
+      : { tone: 'ready',   label: 'Ready',       hint: 'Twin Engine Calibrated' };
 
   return (
     <header
@@ -587,11 +587,6 @@ export default function Navbar({
               <span className="ftnav-demo-text">Live Demo</span>
             </button>
           )}
-
-          <span className={`ftnav-status is-${status.tone}`} title={status.hint}>
-            <span className="ftnav-status-dot" aria-hidden="true" />
-            <span className="ftnav-status-label">{status.label}</span>
-          </span>
 
           <button
             type="button"
