@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home,
@@ -13,6 +13,10 @@ import {
   Menu,
   X,
   Sparkles,
+  User as UserIcon,
+  Settings as SettingsIcon,
+  ChevronDown,
+  Database,
 } from 'lucide-react';
 
 /* ============================================================
@@ -347,21 +351,124 @@ const FTNAV_CSS = `
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ftnav-logout {
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  margin-right: 2px;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--ftnav-text-muted);
-  cursor: pointer;
-  transition: background-color .18s ease, color .18s ease;
 }
-.ftnav-logout:hover {
-  background: color-mix(in srgb, var(--ftnav-danger) 14%, transparent);
+.ftnav-sample-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--ftnav-accent-soft);
+  color: var(--ftnav-accent);
+  border: 1px solid color-mix(in srgb, var(--ftnav-accent) 25%, transparent);
+  white-space: nowrap;
+}
+.ftnav-user-dropdown-wrap {
+  position: relative;
+}
+.ftnav-avatar-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px 3px 3px;
+  border-radius: 999px;
+  border: 1px solid var(--ftnav-border);
+  background: var(--ftnav-surface);
+  color: var(--ftnav-text);
+  cursor: pointer;
+  transition: all .18s ease;
+}
+.ftnav-avatar-btn:hover {
+  background: var(--ftnav-surface-hover);
+  border-color: color-mix(in srgb, var(--ftnav-text) 20%, transparent);
+}
+.ftnav-avatar-btn:focus-visible {
+  outline: 2px solid var(--ftnav-accent);
+  outline-offset: 2px;
+}
+.ftnav-chevron {
+  color: var(--ftnav-text-muted);
+  transition: transform .2s ease;
+}
+.ftnav-chevron.is-open {
+  transform: rotate(180deg);
+}
+.ftnav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: var(--ftnav-solid);
+  border: 1px solid var(--ftnav-border);
+  border-radius: 12px;
+  box-shadow: var(--ftnav-shadow), 0 12px 28px -4px rgba(0, 0, 0, 0.15);
+  padding: 6px;
+  z-index: 1050;
+  animation: ftnavFadeDown .15s ease-out;
+}
+@keyframes ftnavFadeDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ftnav-dropdown-header {
+  padding: 8px 10px 10px;
+}
+.ftnav-dropdown-user-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ftnav-text);
+}
+.ftnav-dropdown-user-email {
+  font-size: 0.74rem;
+  color: var(--ftnav-text-muted);
+  margin-top: 2px;
+}
+.ftnav-dropdown-seeded-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ftnav-ok);
+  background: color-mix(in srgb, var(--ftnav-ok) 12%, transparent);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 6px;
+}
+.ftnav-dropdown-divider {
+  height: 1px;
+  background: var(--ftnav-border);
+  margin: 4px 0;
+}
+.ftnav-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--ftnav-text);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+.ftnav-dropdown-item:hover {
+  background: var(--ftnav-surface-hover);
+  color: var(--ftnav-text);
+}
+.ftnav-dropdown-item:focus-visible {
+  outline: 2px solid var(--ftnav-accent);
+}
+.ftnav-dropdown-item-danger {
+  color: var(--ftnav-danger);
+}
+.ftnav-dropdown-item-danger:hover {
+  background: color-mix(in srgb, var(--ftnav-danger) 10%, transparent);
   color: var(--ftnav-danger);
 }
 
@@ -487,13 +594,26 @@ export default function Navbar({
   backendOnline,
   monthsCount = 0,
   onQuickDemo,
+  isSeeded = false,
 }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
 
   useInjectedStyles(FTNAV_CSS);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -575,17 +695,11 @@ export default function Navbar({
 
         {/* ── Actions ───────────────────────────────────── */}
         <div className="ftnav-actions">
-          {onQuickDemo && (
-            <button
-              type="button"
-              className="ftnav-btn-ghost ftnav-demo-btn"
-              onClick={onQuickDemo}
-              title="Load 6 months of demo records"
-              aria-label="Load live demo profile"
-            >
-              <Sparkles size={14} aria-hidden="true" />
-              <span className="ftnav-demo-text">Live Demo</span>
-            </button>
+          {isSeeded && (
+            <span className="ftnav-sample-badge" title="Demo statements loaded">
+              <Sparkles size={12} aria-hidden="true" />
+              <span>Sample data</span>
+            </span>
           )}
 
           <button
@@ -599,20 +713,74 @@ export default function Navbar({
           </button>
 
           {user ? (
-            <div className="ftnav-user">
-              <span className="ftnav-avatar" aria-hidden="true">
-                {user.name?.charAt(0).toUpperCase() || 'U'}
-              </span>
-              <span className="ftnav-username" title={user.name}>{user.name}</span>
+            <div className="ftnav-user-dropdown-wrap" ref={userMenuRef}>
               <button
                 type="button"
-                className="ftnav-logout"
-                onClick={handleLogout}
-                aria-label="Sign out"
-                title="Sign out"
+                className="ftnav-avatar-btn"
+                onClick={() => setUserMenuOpen((v) => !v)}
+                aria-expanded={userMenuOpen}
+                aria-haspopup="true"
+                aria-label="User account menu"
               >
-                <LogOut size={15} aria-hidden="true" />
+                <span className="ftnav-avatar" aria-hidden="true">
+                  {user.name?.charAt(0).toUpperCase() || 'U'}
+                </span>
+                <span className="ftnav-username" title={user.name}>{user.name}</span>
+                <ChevronDown size={14} className={`ftnav-chevron ${userMenuOpen ? 'is-open' : ''}`} aria-hidden="true" />
               </button>
+
+              {userMenuOpen && (
+                <div className="ftnav-dropdown-menu" role="menu">
+                  <div className="ftnav-dropdown-header">
+                    <div className="ftnav-dropdown-user-name">{user.name}</div>
+                    <div className="ftnav-dropdown-user-email">{user.email || 'user@fintwin.ai'}</div>
+                    {isSeeded && (
+                      <span className="ftnav-dropdown-seeded-tag">
+                        <Database size={10} style={{ marginRight: '4px' }} />
+                        Sample Data Seeded
+                      </span>
+                    )}
+                  </div>
+                  <div className="ftnav-dropdown-divider" />
+                  <button
+                    type="button"
+                    className="ftnav-dropdown-item"
+                    role="menuitem"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      go('/records');
+                    }}
+                  >
+                    <UserIcon size={14} aria-hidden="true" />
+                    <span>Profile & Ledgers</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="ftnav-dropdown-item"
+                    role="menuitem"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      go('/dashboard');
+                    }}
+                  >
+                    <SettingsIcon size={14} aria-hidden="true" />
+                    <span>Settings & Twin Config</span>
+                  </button>
+                  <div className="ftnav-dropdown-divider" />
+                  <button
+                    type="button"
+                    className="ftnav-dropdown-item ftnav-dropdown-item-danger"
+                    role="menuitem"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      handleLogout();
+                    }}
+                  >
+                    <LogOut size={14} aria-hidden="true" />
+                    <span>Sign out</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <button type="button" className="ftnav-btn-primary" onClick={() => go('/login')}>

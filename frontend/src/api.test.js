@@ -34,6 +34,8 @@ describe('API Ingestion & Data Transformation Utilities', () => {
     expect(hdfc.bank_detected).toContain('HDFC');
     expect(hdfc.transaction_count).toBeGreaterThan(15);
     expect(hdfc.monthly_aggregates.length).toBeGreaterThanOrEqual(2);
+    expect(hdfc.verification).toBeDefined();
+    expect(hdfc.verification.balance_verified).toBe(true);
 
     const firstMonth = hdfc.monthly_aggregates[0];
     expect(firstMonth.active_income).toBeGreaterThan(0);
@@ -54,5 +56,13 @@ describe('API Ingestion & Data Transformation Utilities', () => {
     const res = await localParseStatement(mockPdf);
     expect(res.status).toBe('password_required');
     expect(res.hint).toBeDefined();
+  });
+
+  it('toBackendMonth formats numbers cleanly with default 0s', () => {
+    const res = toBackendMonth({ month: '2024-01' });
+    expect(res.month).toBe('2024-01');
+    expect(res.active_income).toBe(0);
+    expect(res.money_spent).toBe(0);
+    expect(res.transactions).toEqual([]);
   });
 });

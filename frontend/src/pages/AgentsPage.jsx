@@ -1,7 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import FinancialHealthGauge from '../components/FinancialHealthGauge';
-import { evaluateLocalAgents } from '../api';
+import { evaluateLocalAgents, fetchAgentsCollaborationAPI } from '../api';
 import { usePageTitle } from '../lib/hooks';
+import { ensureRupees } from '../lib/format';
+import { Sparkles, RefreshCw, Cpu, CheckCircle2, ChevronDown, ChevronUp, Layers, Compass, ArrowRight } from 'lucide-react';
 
 function currency(val) {
   return new Intl.NumberFormat('en-IN', {
@@ -11,16 +13,43 @@ function currency(val) {
   }).format(val);
 }
 
-
 export default function AgentsPage({
   profile,
-  months,
+  months = [],
   backendOnline,
 }) {
-  const agentsData = useMemo(() => {
+  usePageTitle('Multi-Agent Intelligence — FinTwinAI');
+
+  const [liveConsensus, setLiveConsensus] = useState(null);
+  const [loadingLive, setLoadingLive] = useState(false);
+  const [showDebateTrail, setShowDebateTrail] = useState(false);
+  const [auditTimestamp, setAuditTimestamp] = useState(null);
+
+  const localAgents = useMemo(() => {
     return evaluateLocalAgents(profile, months);
   }, [profile, months]);
-  usePageTitle('Multi-Agent Intelligence — FinTwinAI');
+
+  const handleRunAudit = useCallback(async () => {
+    if (!months || months.length === 0) return;
+    setLoadingLive(true);
+    try {
+      const res = await fetchAgentsCollaborationAPI(months, 'Analyze holistic twin health and cross-agent alignment', 4);
+      if (res && res.agents) {
+        setLiveConsensus(res);
+        setAuditTimestamp(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      }
+    } catch (err) {
+      console.warn('Live multi-agent audit fallback to local twin:', err);
+    } finally {
+      setLoadingLive(false);
+    }
+  }, [months]);
+
+  useEffect(() => {
+    if (backendOnline && months.length > 0) {
+      handleRunAudit();
+    }
+  }, [backendOnline, months.length, handleRunAudit]);
 
   // Overall financial health score
   const healthScore = useMemo(() => {
@@ -42,18 +71,64 @@ export default function AgentsPage({
   const savingsRate = profile?.income ? (profile?.savings / profile.income) * 100 : 0;
   const dti = profile?.income ? (profile?.emi / profile.income) * 100 : 0;
 
+  // Augment agents with live backend signals if present
+  const mergedAgents = useMemo(() => {
+    if (!liveConsensus?.agents) return localAgents;
+
+    return localAgents.map((agent) => {
+      const backendData = liveConsensus.agents[agent.id];
+      if (!backendData) return agent;
+
+      return {
+        ...agent,
+        liveSignal: backendData.signal ? ensureRupees(backendData.signal) : agent.recommendation,
+        liveMetric: backendData.metric !== undefined ? backendData.metric : null,
+        isLive: true,
+      };
+    });
+  }, [localAgents, liveConsensus]);
+
+  const debateLog = liveConsensus?.collaboration_log || [];
+
   return (
     <div className="page-container agents-page">
       {/* Header Banner */}
       <div className="page-header-banner animate-in" style={{ '--delay': '0ms' }}>
-        <div className="header-eyebrow">
-          <span className="sparkle-icon">🧠</span>
-          <span>Multi-Agent Financial Intelligence • 4 Specialized Agents</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <div className="header-eyebrow">
+              <span className="sparkle-icon">🧠</span>
+              <span>LangGraph Multi-Agent Architecture • 4 Specialized Agents</span>
+              <span className={`status-pill ${backendOnline ? 'verified' : ''}`} style={{ marginLeft: '8px' }}>
+                {backendOnline ? '● Live LangGraph Graph' : '○ Local Twin Fallback'}
+              </span>
+            </div>
+            <h1 className="page-title">Autonomous AI Agent Consensus</h1>
+            <p className="page-subtitle">
+              Four specialized AI agents concurrently audit your financial digital twin across spending behavior,
+              wealth compounding, debt risk, and horizon goals with explainable cross-agent debate.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {auditTimestamp && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Audited at {auditTimestamp}
+              </span>
+            )}
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleRunAudit}
+              disabled={loadingLive || !backendOnline}
+              title={backendOnline ? 'Trigger new multi-agent consensus graph execution' : 'Backend is currently offline'}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <RefreshCw size={14} className={loadingLive ? 'spin-animation' : ''} />
+              <span>{loadingLive ? 'Debating Consensus...' : 'Run Live Audit'}</span>
+            </button>
+          </div>
         </div>
-        <h1 className="page-title">Autonomous AI Agent Consensus</h1>
-        <p className="page-subtitle">
-          Four specialized AI agents concurrently audit your financial digital twin across spending behavior, wealth compounding, debt risk, and horizon goals.
-        </p>
       </div>
 
       {/* Top Overview: Composite Health Gauge & Key Ratios */}
@@ -68,8 +143,8 @@ export default function AgentsPage({
         </div>
 
         <div className="panel key-ratios-panel">
-          <h3 className="panel-title">Ground-Truth Core Ratios</h3>
-          <p className="panel-subtitle">Key prudential indicators extracted from your monthly financial record ledger</p>
+          <h3 className="panel-title">Ground-Truth Core Prudential Ratios</h3>
+          <p className="panel-subtitle">Key indicators extracted from your monthly financial record ledger</p>
 
           <div className="ratios-grid">
             <div className="ratio-box">
@@ -103,13 +178,77 @@ export default function AgentsPage({
         </div>
       </div>
 
+      {/* Optional: Live Supervisor & Agent Debate Trail Accordion */}
+      {debateLog.length > 0 && (
+        <div className="panel animate-in" style={{ padding: '16px 20px', background: 'var(--bg-surface)' }}>
+          <div
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+            onClick={() => setShowDebateTrail(!showDebateTrail)}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Cpu size={18} color="var(--color-lavender)" />
+              <div>
+                <h4 style={{ margin: 0, fontSize: '0.94rem', fontWeight: 700 }}>
+                  LangGraph Supervisor State Machine Trace ({debateLog.length} Thought Steps)
+                </h4>
+                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                  Inspect how the coordinator routed context between specialized agents in real-time
+                </span>
+              </div>
+            </div>
+            <button type="button" className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.78rem' }}>
+              {showDebateTrail ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              <span style={{ marginLeft: '4px' }}>{showDebateTrail ? 'Collapse' : 'Inspect Debate'}</span>
+            </button>
+          </div>
+
+          {showDebateTrail && (
+            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {debateLog.map((step, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    padding: '8px 12px',
+                    background: 'var(--bg-surface-hover)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-subtle)',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  <span
+                    style={{
+                      textTransform: 'uppercase',
+                      fontSize: '0.66rem',
+                      fontWeight: 700,
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      background: step.sender === 'supervisor' ? 'var(--color-lavender-light)' : 'rgba(56, 189, 248, 0.12)',
+                      color: step.sender === 'supervisor' ? 'var(--color-lavender)' : '#0284c7',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {step.sender || 'Agent'}
+                  </span>
+                  <span style={{ color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                    {ensureRupees(step.content)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 4 Multi-Agent Cards Grid */}
       <div className="agents-cards-grid">
-        {agentsData.map((agent, i) => (
+        {mergedAgents.map((agent, i) => (
           <div
             key={agent.id}
             className="agent-detail-card animate-in"
-            style={{ '--agent-color': agent.color, '--delay': `${200 + i * 80}ms` }}
+            style={{ '--agent-color': agent.color, '--delay': `${120 + i * 60}ms` }}
           >
             <div className="agent-card-header">
               <div className="agent-icon-wrap">{agent.icon}</div>
@@ -125,6 +264,11 @@ export default function AgentsPage({
 
             <div className="agent-status-pill-wrap">
               <span className="agent-status-pill">{agent.status}</span>
+              {agent.isLive && (
+                <span className="status-pill verified" style={{ fontSize: '0.62rem', padding: '1px 6px' }}>
+                  Live Signal
+                </span>
+              )}
             </div>
 
             <div className="agent-analysis-body">
@@ -137,7 +281,7 @@ export default function AgentsPage({
                 <span className="rec-bulb">💡</span>
                 <strong>Agent Prescriptive Action:</strong>
               </div>
-              <p>{agent.recommendation}</p>
+              <p>{agent.liveSignal || agent.recommendation}</p>
             </div>
           </div>
         ))}
@@ -149,18 +293,29 @@ export default function AgentsPage({
           <div className="consensus-icon">🧬</div>
           <div>
             <h3>Explainable AI Twin Consensus Summary</h3>
-            <p>Unified verdict computed by combining outputs from all 4 specialized agents</p>
+            <p>
+              {liveConsensus?.final_answer
+                ? 'Cohesive verdict synthesized directly by the LangGraph supervisor node'
+                : 'Unified verdict computed by combining outputs from all 4 specialized agents'}
+            </p>
           </div>
         </div>
 
         <div className="consensus-content">
-          <p>
-            Your digital twin exhibits a <strong>{healthScore >= 75 ? 'robust and resilient' : 'moderate with growth potential'}</strong> financial profile.
-            With a monthly net inflow of <strong>{currency(profile?.income || 0)}</strong> and total monthly obligations of{' '}
-            <strong>{currency(profile?.outflow || 0)}</strong>, your retained capital clears expenses with a{' '}
-            <strong>{savingsRate.toFixed(1)}%</strong> surplus cushion.
-          </p>
-          <div className="consensus-pillars">
+          {liveConsensus?.final_answer ? (
+            <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.65, fontSize: '0.92rem' }}>
+              {ensureRupees(liveConsensus.final_answer)}
+            </div>
+          ) : (
+            <p>
+              Your digital twin exhibits a <strong>{healthScore >= 75 ? 'robust and resilient' : 'moderate with growth potential'}</strong> financial profile.
+              With a monthly net inflow of <strong>{currency(profile?.income || 0)}</strong> and total monthly obligations of{' '}
+              <strong>{currency(profile?.outflow || 0)}</strong>, your retained capital clears expenses with a{' '}
+              <strong>{savingsRate.toFixed(1)}%</strong> surplus cushion.
+            </p>
+          )}
+
+          <div className="consensus-pillars" style={{ marginTop: '18px' }}>
             <div className="pillar-item">
               <span className="pillar-check">✓</span>
               <span><strong>Spending Discipline:</strong> Outflow is maintained under {profile?.income ? Math.round((profile?.outflow / profile.income) * 100) : 0}% of net earnings.</span>

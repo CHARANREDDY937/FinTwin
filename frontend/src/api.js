@@ -67,12 +67,144 @@ export async function askChat(question, months, horizon = 12, model = 'xgboost',
   });
 }
 
+export async function askChatStream(
+  question,
+  months,
+  { onStart, onToken, onMetadata, onDone, signal } = {},
+  horizon = 12,
+  model = 'xgboost',
+  scenario = 'baseline',
+  conversationId = null,
+  userId = null,
+) {
+  const token = getToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
 
-export async function fetchTwinProfile(months) {
-  return request('/twin/profile', {
+  const response = await fetch(`${API_BASE}/chat/stream`, {
     method: 'POST',
+    headers,
+    body: JSON.stringify({
+      question,
+      months: months.map(toBackendMonth),
+      horizon,
+      model,
+      scenario,
+      conversation_id: conversationId || null,
+      user_id: userId ? String(userId) : null,
+    }),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Stream failed with status ${response.status}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split('\n\n');
+    buffer = lines.pop() || '';
+
+    for (const chunk of lines) {
+      const match = chunk.match(/^data:\s*(.+)$/m);
+      if (match) {
+        try {
+          const payload = JSON.parse(match[1]);
+          if (payload.type === 'start' && onStart) onStart(payload);
+          else if (payload.type === 'token' && onToken) onToken(payload.token);
+          else if (payload.type === 'metadata' && onMetadata) onMetadata(payload);
+          else if (payload.type === 'done' && onDone) onDone(payload);
+        } catch {
+          // ignore malformed SSE
+        }
+      }
+    }
+  }
+}
+
+
+export async function fetchConversationsAPI() {
+  return request('/chat/conversations');
+}
+
+export async function createConversationAPI(title = 'New Conversation') {
+  return request('/chat/conversations', {
+    method: 'POST',
+    body: { title },
+  });
+}
+
+export async function renameConversationAPI(conversationId, title) {
+  return request(`/chat/conversations/${conversationId}`, {
+    method: 'PATCH',
+    body: { title },
+  });
+}
+
+export async function deleteConversationAPI(conversationId) {
+  return request(`/chat/conversations/${conversationId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function fetchConversationMessagesAPI(conversationId) {
+  return request(`/chat/conversations/${conversationId}/messages`);
+}
+
+export async function saveChatMessageAPI({ role, content, metric = null, title = null, conversation_id = null }) {
+  return request('/chat/messages', {
+    method: 'POST',
+    body: { role, content, metric, title, conversation_id },
+  });
+}
+
+export async function clearChatMessagesAPI() {
+  return request('/chat/messages', {
+    method: 'DELETE',
+  });
+}
+
+export async function fetchSuggestedPromptsAPI(months) {
+  return request('/chat/suggested-prompts', {
+    method: 'POST',
+    auth: false,
     body: months.map(toBackendMonth),
   });
+}
+
+
+export async function fetchTwinProfile(months, question = null, maxRounds = 4) {
+  return request('/twin/profile', {
+    method: 'POST',
+    body: {
+      months: months.map(toBackendMonth),
+      question,
+      max_rounds: maxRounds,
+    },
+  });
+}
+
+export async function fetchAgentsCollaborationAPI(months, question = null, maxRounds = 4) {
+  try {
+    return await request('/agents/collaborate', {
+      method: 'POST',
+      body: {
+        months: months.map(toBackendMonth),
+        question,
+        max_rounds: maxRounds,
+      },
+    });
+  } catch {
+    return fetchTwinProfile(months, question, maxRounds);
+  }
 }
 
 export async function fetchDatasetsSummary() {
@@ -115,9 +247,38 @@ export async function healthCheck() {
   }
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ─────────────────────────────────────────────────────────────
+   Financial Months & Adaptive Feedback APIs
+   ───────────────────────────────────────────────────────────── */
+
+export async function fetchFinancialMonthsAPI() {
+  return request('/financial/months');
+}
+
+export async function saveFinancialMonthAPI(month) {
+  return request('/financial/months', {
+    method: 'POST',
+    body: toBackendMonth(month),
+  });
+}
+
+export async function deleteFinancialMonthAPI(monthStr) {
+  return request(`/financial/months/${monthStr}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function saveCategoryFeedbackAPI(merchant, category, subcategory = null) {
+  return request('/financial/categorize/feedback', {
+    method: 'POST',
+    auth: false,
+    body: { merchant, category, subcategory },
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────
    Statement & UPI Ingestion APIs
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+   ───────────────────────────────────────────────────────────── */
 
 export async function ingestStatementAPI(file, password = null) {
   const formData = new FormData();
@@ -265,6 +426,14 @@ export function getLocalSampleStatement(type = 'hdfc') {
         transactions: hdfcTxns.filter((t) => t.month === '2024-05'),
       },
     ],
+    verification: {
+      balance_verified: true,
+      total_checked: hdfcTxns.length - 1,
+      matched_transitions: hdfcTxns.length - 1,
+      direction: 'chronological',
+      anomalies: [],
+      summary: 'Balance 100% reconciled: all 22 transitions verified (chronological).',
+    },
   };
 }
 

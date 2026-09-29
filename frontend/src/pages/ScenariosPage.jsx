@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Area,
   AreaChart,
@@ -31,7 +32,22 @@ export default function ScenariosPage({
   theme,
 }) {
   usePageTitle('Life Scenario Simulator — FinTwinAI');
-  const [selectedScenarioKey, setSelectedScenarioKey] = useState('inflation');
+  const [searchParams] = useSearchParams();
+  const paramScenario = searchParams.get('scenario');
+
+  const [selectedScenarioKey, setSelectedScenarioKey] = useState(() => {
+    if (paramScenario && SCENARIO_PRESETS[paramScenario]) {
+      return paramScenario;
+    }
+    return 'inflation';
+  });
+
+  useEffect(() => {
+    if (paramScenario && SCENARIO_PRESETS[paramScenario]) {
+      setSelectedScenarioKey(paramScenario);
+    }
+  }, [paramScenario]);
+
   const [selectedModel, setSelectedModel] = useState('xgboost');
   const [horizon, setHorizon] = useState(24);
   const [chartMetric, setChartMetric] = useState('netWorth'); // 'netWorth', 'savings', 'expense', 'income'

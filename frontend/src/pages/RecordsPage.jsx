@@ -31,7 +31,13 @@ import {
   Receipt,
 } from 'lucide-react';
 import { usePageTitle } from '../lib/hooks';
-import { ingestStatementAPI, fetchSampleStatementAPI } from '../api';
+import {
+  ingestStatementAPI,
+  fetchSampleStatementAPI,
+  saveCategoryFeedbackAPI,
+  saveFinancialMonthAPI,
+  deleteFinancialMonthAPI,
+} from '../api';
 
 const defaultMonth = {
   month: new Date().toISOString().slice(0, 7),
@@ -79,6 +85,7 @@ export default function RecordsPage({
   setMonths,
   demoMonths = [],
   backendOnline,
+  user,
 }) {
   usePageTitle('Financial Ledger — FinTwinAI');
   // Manual add/edit modal state
@@ -299,6 +306,16 @@ export default function RecordsPage({
       target.method = 'manual';
       updated[txnIndex] = target;
 
+      // Automatically register user category correction into adaptive memory
+      const narration = target.narration || target.description || '';
+      const cleanNarration = narration.replace(/^(UPI\/|ACH\/|NEFT\/|POS\/|NACH\/)/i, '');
+      const merchantKey = cleanNarration.split('/')[0].trim();
+      if (merchantKey && merchantKey.length >= 3) {
+        saveCategoryFeedbackAPI(merchantKey, newCategory, catMeta?.label).catch((err) =>
+          console.warn('Could not register adaptive category feedback:', err),
+        );
+      }
+
       // Re-aggregate monthly totals dynamically
       setReviewMonths((prevMonths) =>
         prevMonths.map((m) => {
@@ -411,6 +428,18 @@ export default function RecordsPage({
         }
       });
 
+      // Dual-sync to backend database for logged-in users when online
+      if (backendOnline) {
+        reviewMonths.forEach((rm) => {
+          const committedMonth = merged.find((m) => m.month === rm.month);
+          if (committedMonth) {
+            saveFinancialMonthAPI(committedMonth).catch((err) =>
+              console.warn(`Could not sync month ${rm.month} to backend database:`, err),
+            );
+          }
+        });
+      }
+
       return merged.sort((a, b) => (a.month < b.month ? 1 : -1));
     });
 
@@ -466,6 +495,12 @@ export default function RecordsPage({
       return [entry, ...filtered].sort((a, b) => (a.month < b.month ? 1 : -1));
     });
 
+    if (backendOnline) {
+      saveFinancialMonthAPI(entry).catch((err) =>
+        console.warn(`Could not save month ${entry.month} to backend:`, err),
+      );
+    }
+
     setMonthForm(defaultMonth);
     setEditingId(null);
     setShowAddModal(false);
@@ -474,6 +509,11 @@ export default function RecordsPage({
   const handleDeleteMonth = (monthId, monthName) => {
     if (window.confirm(`Are you sure you want to remove the record for ${monthName}?`)) {
       setMonths((current) => current.filter((m) => m.id !== monthId && m.month !== monthName));
+      if (backendOnline) {
+        deleteFinancialMonthAPI(monthName).catch((err) =>
+          console.warn(`Could not delete month ${monthName} from backend:`, err),
+        );
+      }
     }
   };
 
@@ -519,8 +559,31 @@ export default function RecordsPage({
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `fintwin-records-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.href = url;
+    link.setAttribute('download', `fintwin-ledger-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportDrawerCSV = () => {
+    if (!drawerMonth || !drawerMonth.transactions?.length) return;
+    const headers = ['Date', 'Narration', 'Type', 'Amount', 'Category', 'Subcategory', 'Method'];
+    const rows = drawerMonth.transactions.map((t) => [
+      t.date || '',
+      `"${(t.narration || t.description || '').replace(/"/g, '""')}"`,
+      t.type || 'debit',
+      t.amount || 0,
+      t.category || '',
+      t.subcategory || '',
+      t.method || '',
+    ]);
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `fintwin-${drawerMonth.month}-transactions.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -881,13 +944,28 @@ export default function RecordsPage({
           >
             <div className="glass-modal-header">
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <span className="review-bank-badge">
                     {ingestData?.bank_detected || 'Bank Statement'}
                   </span>
                   <span className="review-count-badge">
                     {reviewTransactions.length} Transactions Parsed
                   </span>
+                  {ingestData?.verification && (
+                    <span
+                      className={`balance-badge ${
+                        ingestData.verification.balance_verified ? 'verified' : 'warning'
+                      }`}
+                      title={ingestData.verification.summary}
+                    >
+                      <ShieldCheck size={13} />
+                      <span>
+                        {ingestData.verification.balance_verified
+                          ? 'Balance 100% Reconciled'
+                          : `${ingestData.verification.matched_transitions}/${ingestData.verification.total_checked} Reconciled`}
+                      </span>
+                    </span>
+                  )}
                 </div>
                 <h2 className="panel-title" style={{ marginTop: '6px' }}>
                   Review Statement & Calibrate Ledger
@@ -1158,6 +1236,18 @@ export default function RecordsPage({
                   <span className="drawer-count-pill">
                     {drawerMonth.transactions?.length || 0} Transactions
                   </span>
+                  {drawerMonth.transactions?.length > 0 && (
+                    <button
+                      type="button"
+                      className="sample-pill-btn"
+                      style={{ padding: '3px 10px', fontSize: '0.72rem' }}
+                      onClick={handleExportDrawerCSV}
+                      title="Export transactions to CSV"
+                    >
+                      <Download size={12} />
+                      <span>Export</span>
+                    </button>
+                  )}
                 </div>
                 <h3 className="drawer-title" style={{ marginTop: '6px' }}>
                   Itemized Monthly Ledger

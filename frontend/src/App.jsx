@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useFinTwin } from './store/FinTwinContext';
 import Navbar from './components/Navbar';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -64,8 +64,11 @@ export default function App() {
     demoMonths,
   };
 
+  const location = useLocation();
+  const isChat = location.pathname === '/chat';
+
   return (
-    <div className="app-shell main-app-shell">
+    <div className={`app-shell main-app-shell ${isChat ? 'chat-page-active' : ''}`}>
       <Navbar
         user={user}
         setUser={setUser}
@@ -74,9 +77,10 @@ export default function App() {
         backendOnline={backendOnline}
         monthsCount={months.length}
         onQuickDemo={handleQuickDemo}
+        isSeeded={Boolean(user?.isDemo || months?.length === demoMonths?.length || localStorage.getItem('fintwinai:token') === 'demo-token')}
       />
 
-      <main className="main-content-outlet">
+      <main className={`main-content-outlet ${isChat ? 'chat-page-active' : ''}`}>
         <ErrorBoundary>
           <Suspense fallback={<PageFallback />}>
             <Routes>
