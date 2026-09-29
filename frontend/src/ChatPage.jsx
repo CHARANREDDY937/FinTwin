@@ -2353,26 +2353,27 @@ export default function ChatPage() {
           )}
 
           <div className="chat-messages-stream" ref={streamRef}>
-            {months.length === 0 ? (
-              <div className="chat-stream-welcome no-data-state">
-                <div className="welcome-emblem"><Compass size={30} /></div>
-                <h3>Get your finances set up</h3>
-                <p>
-                  Upload a bank statement (PDF or CSV) or load sample data. Your twin will explain your financial health in plain language.
-                </p>
-                <div className="welcome-action-buttons">
-                  <button type="button" className="ftnav-btn-primary" onClick={() => navigate('/records')}>
-                    <Upload size={14} />
-                    <span>Upload statement</span>
-                  </button>
-                  <button type="button" className="ftnav-btn-ghost" onClick={handleQuickDemo}>
-                    <Database size={14} />
-                    <span>Load sample data</span>
-                  </button>
+            {chat.length === 0 ? (
+              months.length === 0 ? (
+                <div className="chat-stream-welcome no-data-state">
+                  <div className="welcome-emblem"><Compass size={30} /></div>
+                  <h3>Get your finances set up</h3>
+                  <p>
+                    Upload a bank statement (PDF or CSV) or load sample data. Your twin will explain your financial health in plain language.
+                  </p>
+                  <div className="welcome-action-buttons">
+                    <button type="button" className="ftnav-btn-primary" onClick={() => navigate('/records')}>
+                      <Upload size={14} />
+                      <span>Upload statement</span>
+                    </button>
+                    <button type="button" className="ftnav-btn-ghost" onClick={handleQuickDemo}>
+                      <Database size={14} />
+                      <span>Load sample data</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : chat.length === 0 ? (
-              <div className="chat-stream-welcome">
+              ) : (
+                <div className="chat-stream-welcome">
                 <div className="welcome-hero-badge">
                   <Sparkles size={13} />
                   <span>Executive digital twin</span>
@@ -2439,7 +2440,7 @@ export default function ChatPage() {
                   ))}
                 </div>
               </div>
-            ) : (
+            )) : (
               chat.map((msg, index) => {
                 const isAssistant = msg.role === 'assistant';
                 const hasAgents = msg.agents && Object.keys(msg.agents).length > 0;

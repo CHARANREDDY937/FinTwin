@@ -11,6 +11,7 @@ import {
   saveChatMessageAPI,
   clearChatMessagesAPI,
   fetchSuggestedPromptsAPI,
+  fetchFinancialMonthsAPI,
 } from '../api';
 import { ensureRupees, currency, latestByMonth, toNumber, STORAGE_KEYS, loadStoredValue, storeValue } from '../lib/format';
 import { buildProfile, buildForecast, buildInsight, demoMonths, evaluateLocalAgents } from '../lib/twinEngine';
@@ -65,13 +66,21 @@ function getLocalSuggestedPrompts(profile) {
   return prompts.slice(0, 4);
 }
 
+function isSeededDemoLedger(records) {
+  if (!Array.isArray(records) || records.length !== demoMonths.length) return false;
+  return demoMonths.every((demoMonth) => {
+    const record = records.find((item) => item.month === demoMonth.month);
+    return record && Object.keys(demoMonth).every((key) => record[key] === demoMonth[key]);
+  });
+}
+
 export function FinTwinProvider({ children }) {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(() => loadStoredValue(STORAGE_KEYS.user, null));
   const [months, setMonths] = useState(() => {
     const saved = loadStoredValue(STORAGE_KEYS.months, null);
-    return saved && saved.length > 0 ? saved : demoMonths;
+    return saved && saved.length > 0 && !isSeededDemoLedger(saved) ? saved : [];
   });
   const [chat, setChat] = useState(() => {
     const raw = loadStoredValue(STORAGE_KEYS.chat, []);
@@ -189,6 +198,35 @@ export function FinTwinProvider({ children }) {
     loadPrompts();
     return () => { isMounted = false; };
   }, [backendOnline, months]);
+
+  useEffect(() => {
+    if (!user || !backendOnline) return;
+    let isMounted = true;
+
+    async function loadFinancialMonths() {
+      try {
+        const remoteMonths = await fetchFinancialMonthsAPI();
+        if (!isMounted || !Array.isArray(remoteMonths)) return;
+        setMonths(remoteMonths.map((month) => ({
+          id: month.id,
+          month: month.month,
+          activeIncome: month.active_income,
+          passiveIncome: month.passive_income,
+          creditScore: month.credit_score,
+          loansOutstanding: month.loans_outstanding,
+          emiMonthly: month.emi_monthly,
+          miscellaneousCharges: month.miscellaneous_charges,
+          moneySpent: month.money_spent,
+          transactions: month.transactions || [],
+        })));
+      } catch {
+        // Keep locally entered records when the authenticated ledger is unavailable.
+      }
+    }
+
+    loadFinancialMonths();
+    return () => { isMounted = false; };
+  }, [backendOnline, user]);
 
   const toggleTheme = () => {
     setTheme((current) => (current === 'light' ? 'dark' : 'light'));

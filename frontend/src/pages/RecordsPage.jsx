@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Plus,
-  Sparkles,
   Download,
   Search,
   Edit3,
@@ -33,7 +32,6 @@ import {
 import { usePageTitle } from '../lib/hooks';
 import {
   ingestStatementAPI,
-  fetchSampleStatementAPI,
   saveCategoryFeedbackAPI,
   saveFinancialMonthAPI,
   deleteFinancialMonthAPI,
@@ -83,7 +81,6 @@ function formatMonthLabel(monthValue) {
 export default function RecordsPage({
   months = [],
   setMonths,
-  demoMonths = [],
   backendOnline,
   user,
 }) {
@@ -275,19 +272,6 @@ export default function RecordsPage({
       processIngestionResult(result);
     } catch (err) {
       setPasswordErrorMessage(err.message || 'Failed to decrypt statement.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleTrySample = async (sampleType) => {
-    setIsUploading(true);
-    setUploadError(null);
-    try {
-      const result = await fetchSampleStatementAPI(sampleType);
-      processIngestionResult(result);
-    } catch (err) {
-      setUploadError(err.message || 'Failed to load sample statement.');
     } finally {
       setIsUploading(false);
     }
@@ -517,15 +501,6 @@ export default function RecordsPage({
     }
   };
 
-  const handleLoadDemo = () => {
-    setMonths(
-      demoMonths.map((item) => ({
-        ...item,
-        id: `${item.month}-${Math.random()}`,
-      })),
-    );
-  };
-
   const handleExportCSV = () => {
     if (!months.length) return;
     const headers = [
@@ -654,15 +629,6 @@ export default function RecordsPage({
               <Plus size={16} />
               <span>Manual Entry</span>
             </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleLoadDemo}
-              title="Load 6 months of demo financial history"
-            >
-              <Sparkles size={14} />
-              <span>Load Demo Dataset</span>
-            </button>
             {months.length > 0 && (
               <button
                 type="button"
@@ -754,32 +720,6 @@ export default function RecordsPage({
             </div>
           </div>
 
-          {/* 1-Click Quick Testing Sample Buttons */}
-          <div className="dropzone-actions" onClick={(e) => e.stopPropagation()}>
-            <span className="sample-label">Quick Test Fixtures:</span>
-            <div className="sample-buttons-row">
-              <button
-                type="button"
-                className="sample-pill-btn"
-                onClick={() => handleTrySample('hdfc')}
-                disabled={isUploading}
-                title="Test parsing an authentic HDFC NetBanking statement"
-              >
-                <FileText size={13} />
-                <span>⚡ Try Sample HDFC PDF</span>
-              </button>
-              <button
-                type="button"
-                className="sample-pill-btn"
-                onClick={() => handleTrySample('phonepe')}
-                disabled={isUploading}
-                title="Test parsing PhonePe UPI transactions CSV"
-              >
-                <Receipt size={13} />
-                <span>⚡ Try Sample PhonePe CSV</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -1623,18 +1563,13 @@ export default function RecordsPage({
             <p>
               {filterQuery
                 ? 'No months match your search criteria.'
-                : 'Upload a bank statement PDF, a UPI CSV, or load demo records to begin.'}
+                : 'Upload a bank statement PDF or a UPI CSV to begin.'}
             </p>
             {!filterQuery && (
-              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
-                <button type="button" className="primary-button" onClick={() => handleTrySample('hdfc')}>
-                  <Sparkles size={14} />
-                  <span>Try Sample HDFC PDF</span>
-                </button>
-                <button type="button" className="secondary-button" onClick={handleLoadDemo}>
-                  <span>Load Demo History</span>
-                </button>
-              </div>
+              <button type="button" className="primary-button" onClick={() => fileInputRef.current?.click()}>
+                <UploadCloud size={14} />
+                <span>Upload Statement</span>
+              </button>
             )}
           </div>
         ) : (
