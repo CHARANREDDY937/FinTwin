@@ -1,0 +1,16 @@
+{
+  "CUSTOM_MYSTERY_CAFE_BANGALORE": {
+    "category": "money_spent",
+    "subcategory": "Dining Out",
+    "confidence": 0.99,
+    "method": "adaptive_user_rule",
+    "updated_at": "2026-09-29T14:05:32.838623"
+  },
+  "MY_LOCAL_KIRANA_STORE": {
+    "category": "money_spent",
+    "subcategory": "Groceries",
+    "confidence": 0.99,
+    "method": "adaptive_user_rule",
+    "updated_at": "2026-09-29T14:05:29.198094"
+  }
+}

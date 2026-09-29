@@ -69,8 +69,119 @@ def clean_amount(val: Any) -> float:
         return 0.0
 
 
+def sanitize_pii(text: str) -> str:
+    """Mask sensitive PII (Indian mobile numbers, bank account numbers, PAN, Aadhaar, and UPI IDs)."""
+    if not text:
+        return ""
+    # Mask Indian mobile numbers: 10 digits starting with 6-9, optionally prefixed by +91 or 0
+    s = re.sub(r"(?:\+91[\-\s]?|0)?[6-9]\d{9}\b", "[PHONE_MASKED]", text)
+    # Mask bank account numbers: sequence of 9 to 18 digits
+    s = re.sub(r"\b\d{9,18}\b", "[ACCT_MASKED]", s)
+    # Mask PAN: 5 letters + 4 digits + 1 letter
+    s = re.sub(r"\b[A-Z]{5}[0-9]{4}[A-Z]\b", "[PAN_MASKED]", s, flags=re.IGNORECASE)
+    # Mask UPI handles: e.g. name@okaxis, 9876543210@paytm -> user@upi
+    s = re.sub(
+        r"[\w\.\-]+@(ok\w+|paytm|ybl|axl|ibl|upi|sbi|hdfcbank|icici|postbank)",
+        "[UPI_MASKED]",
+        s,
+        flags=re.IGNORECASE,
+    )
+    return s
+
+
 class BankStatementParser:
     """End-to-end parser for Indian Bank PDFs (SBI, HDFC, ICICI, Axis, Kotak, etc.) and UPI CSVs."""
+
+    def verify_balance_continuity(self, transactions: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Verifies running balance continuity across consecutive transactions.
+
+        Calculates whether: prev_balance ± amount == current_balance.
+        Supports both chronological and reverse-chronological statement layouts.
+        """
+        if not transactions:
+            return {
+                "balance_verified": True,
+                "total_checked": 0,
+                "matched_transitions": 0,
+                "anomalies": [],
+                "summary": "No transactions to verify.",
+            }
+
+        # Select transactions that have non-zero balance numbers
+        with_balance = [t for t in transactions if clean_amount(t.get("balance")) > 0]
+        if len(with_balance) < 2:
+            return {
+                "balance_verified": True,
+                "total_checked": len(with_balance),
+                "matched_transitions": 0,
+                "anomalies": [],
+                "summary": "Single or no balance record found; balance continuity verification skipped.",
+            }
+
+        def test_transitions(tx_list: List[Dict[str, Any]], is_forward: bool):
+            matches = 0
+            anomalies = []
+            for idx in range(1, len(tx_list)):
+                prev = tx_list[idx - 1]
+                curr = tx_list[idx]
+                prev_bal = clean_amount(prev.get("balance"))
+                curr_bal = clean_amount(curr.get("balance"))
+                curr_amt = clean_amount(curr.get("amount"))
+                curr_type = curr.get("type", "debit").lower()
+
+                if is_forward:
+                    # Chronological: prev -> curr
+                    expected = prev_bal + curr_amt if curr_type == "credit" else prev_bal - curr_amt
+                else:
+                    # Reverse-chronological: curr is older, prev is newer
+                    expected = prev_bal - curr_amt if prev.get("type", "debit").lower() == "credit" else prev_bal + curr_amt
+
+                diff = abs(expected - curr_bal)
+                if diff <= 1.0:  # Within ₹1 tolerance for rounding/paise
+                    matches += 1
+                else:
+                    anomalies.append({
+                        "index": idx,
+                        "date": curr.get("date"),
+                        "narration": curr.get("narration"),
+                        "amount": curr_amt,
+                        "type": curr_type,
+                        "expected_balance": round(expected, 2),
+                        "actual_balance": round(curr_bal, 2),
+                        "difference": round(diff, 2),
+                    })
+            return matches, anomalies
+
+        fwd_matches, fwd_anomalies = test_transitions(with_balance, is_forward=True)
+        rev_matches, rev_anomalies = test_transitions(with_balance, is_forward=False)
+
+        total_transitions = len(with_balance) - 1
+        if rev_matches > fwd_matches:
+            best_matches = rev_matches
+            best_anomalies = rev_anomalies
+            direction = "reverse-chronological"
+        else:
+            best_matches = fwd_matches
+            best_anomalies = fwd_anomalies
+            direction = "chronological"
+
+        verified = (total_transitions > 0 and (best_matches / total_transitions) >= 0.70)
+        summary = (
+            f"Balance 100% reconciled: all {best_matches} transitions verified ({direction})."
+            if verified and len(best_anomalies) == 0
+            else f"Balance verified: {best_matches}/{total_transitions} transitions reconciled ({direction})."
+            if verified
+            else f"Balance audit: {best_matches}/{total_transitions} reconciled; {len(best_anomalies)} anomalies detected."
+        )
+
+        return {
+            "balance_verified": verified,
+            "total_checked": total_transitions,
+            "matched_transitions": best_matches,
+            "direction": direction,
+            "anomalies": best_anomalies[:5],
+            "summary": summary,
+        }
 
     def detect_bank_from_text(self, text: str, header_text: Optional[str] = None) -> Tuple[str, str]:
         """Detect bank identity accurately using header-first priority before scanning narrations."""
@@ -352,6 +463,10 @@ class BankStatementParser:
                                 "raw_line": line,
                             })
 
+        # Prefer block parser if it captured more transactions than line-by-line tabular parsing
+        if block_txns and (len(block_txns) > len(transactions) or not transactions):
+            return block_txns
+
         return transactions
 
     def parse_pdf(
@@ -446,11 +561,14 @@ class BankStatementParser:
                 "message": f"Could not identify tabular transactions in this {bank_name} statement layout. Please verify it is a valid statement.",
             }
 
+        verification = self.verify_balance_continuity(transactions)
+
         return {
             "status": "success",
             "bank_detected": bank_name,
             "transaction_count": len(transactions),
             "transactions": transactions,
+            "verification": verification,
         }
 
 
@@ -547,11 +665,14 @@ class BankStatementParser:
                         "reference": row.get(col_map.get("ref", ""), ""),
                     })
 
+            verification = self.verify_balance_continuity(transactions)
+
             return {
                 "status": "success",
                 "bank_detected": "UPI / Bank CSV Export",
                 "transaction_count": len(transactions),
                 "transactions": transactions,
+                "verification": verification,
             }
         except Exception as e:
             logger.exception(f"Error parsing CSV statement: {e}")
@@ -670,6 +791,7 @@ class BankStatementParser:
 
         # Step 3: Monthly Roll-up Aggregation
         monthly_aggregates = self.aggregate_monthly(categorized_txns)
+        verification = self.verify_balance_continuity(categorized_txns)
 
         return {
             "status": "success",
@@ -678,6 +800,7 @@ class BankStatementParser:
             "transaction_count": len(categorized_txns),
             "transactions": categorized_txns,
             "monthly_aggregates": monthly_aggregates,
+            "verification": verification,
         }
 
     # -------------------------------------------------------------
@@ -724,6 +847,7 @@ class BankStatementParser:
                 t.update(heur)
 
         aggregates = self.aggregate_monthly(sample_txns)
+        verification = self.verify_balance_continuity(sample_txns)
         return {
             "status": "success",
             "bank_detected": "HDFC Bank (Sample E-Statement)",
@@ -731,6 +855,7 @@ class BankStatementParser:
             "transaction_count": len(sample_txns),
             "transactions": sample_txns,
             "monthly_aggregates": aggregates,
+            "verification": verification,
         }
 
     def get_sample_phonepe_csv(self) -> Dict[str, Any]:
@@ -757,6 +882,7 @@ class BankStatementParser:
                 t.update(heur)
 
         aggregates = self.aggregate_monthly(sample_txns)
+        verification = self.verify_balance_continuity(sample_txns)
         return {
             "status": "success",
             "bank_detected": "PhonePe UPI (Sample CSV)",
@@ -764,6 +890,7 @@ class BankStatementParser:
             "transaction_count": len(sample_txns),
             "transactions": sample_txns,
             "monthly_aggregates": aggregates,
+            "verification": verification,
         }
 
 

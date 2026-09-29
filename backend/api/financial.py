@@ -136,3 +136,21 @@ async def get_sample_statement(statement_type: str):
             status_code=400,
             detail=f"Unknown statement type '{statement_type}'. Supported types: 'hdfc', 'phonepe'",
         )
+
+
+class CategoryFeedbackRequest(BaseModel):
+    merchant: str = Field(..., min_length=1)
+    category: str = Field(..., min_length=1)
+    subcategory: Optional[str] = None
+
+
+@router.post("/categorize/feedback")
+async def record_category_feedback(payload: CategoryFeedbackRequest):
+    """Registers user category correction into adaptive rules memory."""
+    from services.categorizer import categorizer
+    result = categorizer.record_user_feedback(
+        merchant_pattern=payload.merchant,
+        category=payload.category,
+        subcategory=payload.subcategory,
+    )
+    return result

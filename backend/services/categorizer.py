@@ -1,10 +1,27 @@
 import re
 import json
 import logging
+from pathlib import Path
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 from services.groq_service import GroqService
 
 logger = logging.getLogger("FinTwin.Categorizer")
+
+def sanitize_pii(text: str) -> str:
+    """Mask sensitive PII (Indian mobile numbers, bank account numbers, PAN, Aadhaar, and UPI IDs)."""
+    if not text:
+        return ""
+    s = re.sub(r"(?:\+91[\-\s]?|0)?[6-9]\d{9}\b", "[PHONE_MASKED]", text)
+    s = re.sub(r"\b\d{9,18}\b", "[ACCT_MASKED]", s)
+    s = re.sub(r"\b[A-Z]{5}[0-9]{4}[A-Z]\b", "[PAN_MASKED]", s, flags=re.IGNORECASE)
+    s = re.sub(
+        r"[\w\.\-]+@(ok\w+|paytm|ybl|axl|ibl|upi|sbi|hdfcbank|icici|postbank)",
+        "[UPI_MASKED]",
+        s,
+        flags=re.IGNORECASE,
+    )
+    return s
 
 # Canonical FinTwin category keys
 CAT_ACTIVE_INCOME = "active_income"
@@ -155,6 +172,17 @@ DETERMINISTIC_RULES = [
         "Bank Charges & Penalties",
         0.94,
     ),
+    # -------------------------------------------------------------
+    # 12. INSURANCE & HEALTHCARE
+    # -------------------------------------------------------------
+    (
+        r"\b(LIC|LIFE\s*INSURANCE|HDFC\s*LIFE|ICICI\s*PRU|MAX\s*LIFE|SBI\s*LIFE|"
+        r"STAR\s*HEALTH|CARE\s*HEALTH|NIVA\s*BUPA|DIGIT\s*INSURANCE|ACKO|POLICYBAZAAR|"
+        r"UNITED\s*INDIA\s*INSURANCE|NEW\s*INDIA\s*ASSURANCE|NATIONAL\s*INSURANCE|BAJAJ\s*ALLIANZ)\b",
+        CAT_MONEY_SPENT,
+        "Insurance & Healthcare",
+        0.95,
+    ),
 ]
 
 
@@ -165,12 +193,62 @@ class CategorizationEngine:
             for pattern, category, subcategory, confidence in DETERMINISTIC_RULES
         ]
         self.groq_service = GroqService()
+        self.adaptive_rules = self._load_adaptive_rules()
+
+    def _load_adaptive_rules(self) -> Dict[str, Dict[str, Any]]:
+        try:
+            p = Path(__file__).parent.parent / "data" / "adaptive_rules.json"
+            if p.exists():
+                with open(p, "r", encoding="utf-8") as f:
+                    return json.load(f)
+        except Exception as e:
+            logger.warning(f"Could not load adaptive rules: {e}")
+        return {}
+
+    def _save_adaptive_rules(self):
+        try:
+            data_dir = Path(__file__).parent.parent / "data"
+            data_dir.mkdir(parents=True, exist_ok=True)
+            p = data_dir / "adaptive_rules.json"
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump(self.adaptive_rules, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Could not save adaptive rules: {e}")
+
+    def record_user_feedback(
+        self, merchant_pattern: str, category: str, subcategory: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Registers a user-corrected merchant category override into persistent adaptive memory."""
+        clean_key = merchant_pattern.strip().upper()
+        if not clean_key:
+            return {"status": "error", "message": "Merchant pattern cannot be empty."}
+        if category not in CATEGORY_META:
+            return {"status": "error", "message": f"Invalid category '{category}'."}
+
+        rule = {
+            "category": category,
+            "subcategory": subcategory or CATEGORY_META.get(category, {}).get("label", "User Override"),
+            "confidence": 0.99,
+            "method": "adaptive_user_rule",
+            "updated_at": datetime.utcnow().isoformat(),
+        }
+        self.adaptive_rules[clean_key] = rule
+        self._save_adaptive_rules()
+        logger.info(f"Recorded adaptive category rule for '{clean_key}' -> {category}")
+        return {"status": "success", "pattern": clean_key, "rule": rule}
 
     def categorize_single_deterministic(
         self, narration: str, txn_type: str, amount: float
     ) -> Optional[Dict[str, Any]]:
-        """Fast regex pattern matching against 100+ known Indian entities."""
+        """Fast regex pattern matching against user adaptive rules and 100+ known Indian entities."""
         clean_narration = narration.strip().upper()
+
+        # Check adaptive user memory first
+        for pattern, rule in self.adaptive_rules.items():
+            if pattern in clean_narration:
+                if rule["category"] == CAT_ACTIVE_INCOME and txn_type.lower() == "debit":
+                    continue
+                return dict(rule)
 
         for regex, category, subcategory, confidence in self.compiled_rules:
             if regex.search(clean_narration):
@@ -262,7 +340,7 @@ class CategorizationEngine:
             prompt_items = [
                 {
                     "id": item["idx"],
-                    "narration": item["narration"][:100],
+                    "narration": sanitize_pii(item["narration"])[:100],
                     "type": item["type"],
                     "amount": item["amount"],
                 }
