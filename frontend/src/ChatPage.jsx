@@ -101,7 +101,10 @@ const chatStudioCss = `
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
   background: var(--bg-app) !important;
   color: var(--text-primary) !important;
-  height: 100vh;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -138,8 +141,12 @@ html.chat-page-locked, body.chat-page-locked {
 .chat-studio-layout {
   flex: 1;
   min-height: 0;
+  height: 100%;
+  max-height: 100%;
   display: grid;
+  grid-template-rows: minmax(0, 1fr);
   grid-template-columns: 280px minmax(0, 1fr) 340px;
+  overflow: hidden;
   transition: grid-template-columns 180ms ease;
 }
 .chat-studio-layout.with-rail { grid-template-columns: 60px minmax(0, 1fr) 340px; }
@@ -498,7 +505,12 @@ html.chat-page-locked, body.chat-page-locked {
 
 /* ---------- MESSAGES STREAM ---------- */
 .chat-messages-stream {
-  flex: 1; overflow-y: auto; padding: 24px 8% 24px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 24px 8% 24px;
   display: flex; flex-direction: column; gap: 20px;
   scroll-behavior: smooth;
 }
@@ -511,8 +523,8 @@ html.chat-page-locked, body.chat-page-locked {
 /* Welcome state */
 .chat-stream-welcome {
   display: flex; flex-direction: column; align-items: center;
-  justify-content: center; text-align: center;
-  margin: auto; padding: 40px 20px; max-width: 720px; width: 100%;
+  justify-content: flex-start; text-align: center;
+  margin: 0 auto; padding: 24px 20px 32px; max-width: 720px; width: 100%;
 }
 .welcome-hero-badge {
   display: inline-flex; align-items: center; gap: 6px;
