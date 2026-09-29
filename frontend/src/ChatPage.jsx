@@ -67,7 +67,7 @@ import { ensureRupees, currency } from './lib/format';
 import { useFinTwin } from './store/FinTwinContext';
 
 export const graphViews = [
-  { id: 'expense', label: 'Expenses', color: '#6366F1', icon: TrendingDown },
+  { id: 'expense', label: 'Expenses', color: '#F43F5E', icon: TrendingDown },
   { id: 'income', label: 'Inflows', color: '#10B981', icon: TrendingUp },
   { id: 'savings', label: 'Surplus', color: '#8B5CF6', icon: Landmark },
   { id: 'netWorth', label: 'Net Worth', color: '#0EA5E9', icon: Sparkles },
