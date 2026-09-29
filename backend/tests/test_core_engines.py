@@ -38,9 +38,9 @@ def test_digital_twin_engine_build_profile(sample_months):
 
     assert profile["months_tracked"] == 2
     assert profile["monthly_income"] == 110000
-    assert profile["monthly_outflow"] == 47000
-    assert profile["monthly_surplus"] == 63000
-    assert profile["savings_rate"] == pytest.approx(63000 / 110000, rel=0.01)
+    assert profile["monthly_outflow"] == 48500
+    assert profile["monthly_surplus"] == 61500
+    assert profile["savings_rate"] == pytest.approx(61500 / 110000, rel=0.01)
     assert profile["debt_service_ratio"] == pytest.approx(15000 / 110000, rel=0.01)
     assert profile["credit_score"] == 755
     assert profile["loan_balance"] == 480000

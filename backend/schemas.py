@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional
+from typing import List, Optional, Literal
 from datetime import datetime
 import uuid
 
@@ -26,7 +26,7 @@ class FinancialMonthResponse(FinancialMonth):
 
 class ScenarioRequest(BaseModel):
     months: List[FinancialMonth]
-    model: str = "xgboost"
+    model: Literal["xgboost", "lstm", "prophet", "qwen"] = "xgboost"
     scenario: str = "baseline"
     horizon: int = Field(default=12, ge=1, le=120)
 
@@ -34,7 +34,7 @@ class ScenarioRequest(BaseModel):
 class ChatRequest(BaseModel):
     question: str
     months: List[FinancialMonth]
-    model: str = "xgboost"
+    model: Literal["xgboost", "lstm", "prophet", "qwen"] = "xgboost"
     scenario: str = "baseline"
     horizon: int = Field(default=12, ge=1, le=120)
 

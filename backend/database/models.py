@@ -48,10 +48,27 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     financial_months = relationship("FinancialMonth", back_populates="user", cascade="all, delete-orphan", order_by="FinancialMonth.month.desc()")
+    conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan", order_by="Conversation.updated_at.desc()")
     chat_messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan", order_by="ChatMessage.created_at.desc()")
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email}, name={self.name})>"
+
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String(255), nullable=False, default="New Conversation")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user = relationship("User", back_populates="conversations")
+    messages = relationship("ChatMessage", back_populates="conversation", cascade="all, delete-orphan", order_by="ChatMessage.created_at.asc()")
+
+    def __repr__(self):
+        return f"<Conversation(id={self.id}, user_id={self.user_id}, title={self.title})>"
 
 
 class FinancialMonth(Base):
@@ -86,6 +103,7 @@ class ChatMessage(Base):
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(GUID(), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=True, index=True)
     role = Column(String(20), nullable=False)
     content = Column(Text, nullable=False)
     metric = Column(String(50), nullable=True)
@@ -93,6 +111,7 @@ class ChatMessage(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     user = relationship("User", back_populates="chat_messages")
+    conversation = relationship("Conversation", back_populates="messages")
 
     def __repr__(self):
         return f"<ChatMessage(user_id={self.user_id}, role={self.role}, metric={self.metric})>"

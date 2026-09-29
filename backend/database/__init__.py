@@ -1,5 +1,5 @@
 from database.connection import init_db, close_db, get_db, get_db_session, engine, AsyncSessionLocal
-from database.models import User, FinancialMonth, ChatMessage, Base
+from database.models import User, FinancialMonth, ChatMessage, Conversation, Base
 from database.crud import (
     create_user,
     get_user_by_email,
@@ -11,6 +11,12 @@ from database.crud import (
     save_chat_message,
     get_chat_history,
     clear_chat_history,
+    create_conversation,
+    get_user_conversations,
+    get_conversation,
+    update_conversation_title,
+    delete_conversation,
+    get_conversation_messages,
     hash_password,
     verify_password,
 )
@@ -25,6 +31,7 @@ __all__ = [
     "User",
     "FinancialMonth",
     "ChatMessage",
+    "Conversation",
     "Base",
     "create_user",
     "get_user_by_email",
@@ -36,6 +43,12 @@ __all__ = [
     "save_chat_message",
     "get_chat_history",
     "clear_chat_history",
+    "create_conversation",
+    "get_user_conversations",
+    "get_conversation",
+    "update_conversation_title",
+    "delete_conversation",
+    "get_conversation_messages",
     "hash_password",
     "verify_password",
 ]

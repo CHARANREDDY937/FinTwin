@@ -16,7 +16,7 @@ def create_engine():
         return create_async_engine(
             db_url,
             echo=False,
-            connect_args={"check_same_thread": False},
+            connect_args={"check_same_thread": False, "timeout": 30},
         )
     else:
         return create_async_engine(
@@ -45,6 +45,11 @@ async def init_db():
             try:
                 from sqlalchemy import text
                 await conn.execute(text("ALTER TABLE financial_months ADD COLUMN transactions TEXT DEFAULT '[]'"))
+            except Exception:
+                pass
+            try:
+                from sqlalchemy import text
+                await conn.execute(text("ALTER TABLE chat_messages ADD COLUMN conversation_id CHAR(36)"))
             except Exception:
                 pass
 

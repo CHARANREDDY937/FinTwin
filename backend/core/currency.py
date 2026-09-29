@@ -60,4 +60,7 @@ def ensure_inr(text: str) -> str:
     # Deduplicate double symbols
     cleaned = re.sub(r"₹\s*₹+", "₹", cleaned)
 
+    # Prefix bare large numbers (4+ digits, not already currency-prefixed) with ₹
+    cleaned = re.sub(r"(?<![₹$\d])(\d{4,}(?:,\d{2,3})*(?:\.\d+)?)", r"₹\1", cleaned)
+
     return cleaned

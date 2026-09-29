@@ -28,6 +28,10 @@ dist/
 frontend/dist/
 .vite/
 frontend/.vite/
+playwright-report/
+frontend/playwright-report/
+test-results/
+frontend/test-results/
 
 # Python / backend
 __pycache__/

@@ -7,7 +7,7 @@ import hashlib
 import secrets
 import json
 
-from database.models import User, FinancialMonth, ChatMessage
+from database.models import User, FinancialMonth, ChatMessage, Conversation
 
 
 def hash_password(password: str) -> str:
@@ -117,13 +117,75 @@ async def delete_financial_month(db: AsyncSession, user_id: uuid.UUID, month: st
     return result.rowcount > 0
 
 
+async def create_conversation(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    title: str = "New Conversation"
+) -> Conversation:
+    conv = Conversation(user_id=user_id, title=title)
+    db.add(conv)
+    await db.flush()
+    await db.refresh(conv)
+    return conv
+
+
+async def get_user_conversations(db: AsyncSession, user_id: uuid.UUID) -> List[Conversation]:
+    result = await db.execute(
+        select(Conversation)
+        .where(Conversation.user_id == user_id)
+        .order_by(Conversation.updated_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+async def get_conversation(
+    db: AsyncSession,
+    conversation_id: uuid.UUID,
+    user_id: uuid.UUID
+) -> Optional[Conversation]:
+    result = await db.execute(
+        select(Conversation)
+        .where(Conversation.id == conversation_id, Conversation.user_id == user_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def update_conversation_title(
+    db: AsyncSession,
+    conversation_id: uuid.UUID,
+    user_id: uuid.UUID,
+    title: str
+) -> Optional[Conversation]:
+    conv = await get_conversation(db, conversation_id, user_id)
+    if conv:
+        conv.title = title
+        await db.flush()
+        await db.refresh(conv)
+    return conv
+
+
+async def delete_conversation(
+    db: AsyncSession,
+    conversation_id: uuid.UUID,
+    user_id: uuid.UUID
+) -> bool:
+    result = await db.execute(
+        delete(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.user_id == user_id
+        )
+    )
+    return result.rowcount > 0
+
+
 async def save_chat_message(
     db: AsyncSession,
     user_id: uuid.UUID,
     role: str,
     content: str,
     metric: Optional[str] = None,
-    title: Optional[str] = None
+    title: Optional[str] = None,
+    conversation_id: Optional[uuid.UUID] = None
 ) -> ChatMessage:
     message = ChatMessage(
         user_id=user_id,
@@ -131,11 +193,33 @@ async def save_chat_message(
         content=content,
         metric=metric,
         title=title,
+        conversation_id=conversation_id,
     )
     db.add(message)
+    if conversation_id:
+        conv = await db.execute(
+            select(Conversation).where(Conversation.id == conversation_id, Conversation.user_id == user_id)
+        )
+        c = conv.scalar_one_or_none()
+        if c:
+            from datetime import datetime
+            c.updated_at = datetime.utcnow()
     await db.flush()
     await db.refresh(message)
     return message
+
+
+async def get_conversation_messages(
+    db: AsyncSession,
+    conversation_id: uuid.UUID,
+    user_id: uuid.UUID
+) -> List[ChatMessage]:
+    result = await db.execute(
+        select(ChatMessage)
+        .where(ChatMessage.conversation_id == conversation_id, ChatMessage.user_id == user_id)
+        .order_by(ChatMessage.created_at.asc())
+    )
+    return list(result.scalars().all())
 
 
 async def get_chat_history(db: AsyncSession, user_id: uuid.UUID, limit: int = 50) -> List[ChatMessage]:

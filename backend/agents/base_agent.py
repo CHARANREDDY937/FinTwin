@@ -53,10 +53,20 @@ class Agent(ABC):
         temperature: float = 0.3,
         max_tokens: int = 1024,
     ) -> str | None:
+        if not self.groq:
+            return None
+        import concurrent.futures
+        coro = self._chat(system_prompt, user_prompt, model, temperature, max_tokens)
         try:
-            return asyncio.run(
-                self._chat(system_prompt, user_prompt, model, temperature, max_tokens)
-            )
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        try:
+            if loop and loop.is_running():
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                    return executor.submit(asyncio.run, coro).result(timeout=10.0)
+            return asyncio.run(coro)
         except Exception as e:
             print(f"[{self.name}] Sync chat error: {e}")
             return None

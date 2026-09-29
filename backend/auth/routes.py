@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, EmailStr
 from datetime import timedelta
 
-from database import get_db_session, create_user, authenticate_user
+from database import get_db_session, create_user, authenticate_user, get_user_by_email
 from auth.jwt import create_access_token, get_current_user
 from config import settings
 
@@ -47,7 +47,7 @@ class UserResponse(BaseModel):
 @router.post("/register", response_model=Token)
 async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db_session)):
     print(f"[DEBUG] Register: email={user_data.email}")
-    existing_user = await authenticate_user(db, user_data.email, user_data.password)
+    existing_user = await get_user_by_email(db, user_data.email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

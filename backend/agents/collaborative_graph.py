@@ -6,7 +6,10 @@ from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
-from langchain_groq import ChatGroq
+try:
+    from langchain_groq import ChatGroq
+except ImportError:
+    ChatGroq = None
 
 from config import settings
 from agents.base_agent import Agent
@@ -43,7 +46,7 @@ class CollaborativeAgentSystem:
             groq_api_key=settings.groq_api_key,
             model_name="qwen/qwen3.8-27b",
             temperature=0.3,
-        ) if settings.groq_api_key else None
+        ) if (ChatGroq and settings.groq_api_key) else None
 
         self.twin_engine = FinancialDigitalTwinEngine()
         self.forecasting_engine = ForecastingScenarioEngine()
@@ -97,9 +100,6 @@ class CollaborativeAgentSystem:
         return workflow.compile()
 
     def _supervisor_node(self, state: AgentState) -> AgentState:
-        if not self.llm:
-            return {**state, "current_agent": "spending", "needs_collaboration": True}
-
         profile = state["profile"]
         question = state.get("user_question", "")
         agent_outputs = state.get("agent_outputs", {})
@@ -107,8 +107,23 @@ class CollaborativeAgentSystem:
         context = state.get("collaboration_context", "")
 
         completed_agents = set(agent_outputs.keys())
-        all_agents = {"spending", "investment", "risk", "goal"}
-        remaining = all_agents - completed_agents
+        all_agents_ordered = ["spending", "investment", "risk", "goal"]
+        remaining = [a for a in all_agents_ordered if a not in completed_agents]
+
+        messages = list(state.get("messages", []))
+
+        if not self.llm:
+            next_agent = remaining[0] if remaining else "synthesize"
+            messages.append(AIMessage(
+                content=f"[SUPERVISOR] Routing to {next_agent.upper()} agent (round {round_num + 1}).",
+                name="supervisor"
+            ))
+            return {
+                **state,
+                "current_agent": next_agent,
+                "needs_collaboration": next_agent != "synthesize",
+                "messages": messages,
+            }
 
         system_prompt = """You are the Financial Supervisor coordinating a team of specialized agents:
 - Spending Agent: Analyzes cash flow, expense ratios, spending pressure
@@ -127,14 +142,13 @@ Decide which agent should run next, or if we should synthesize final answer.
 Return ONLY one of: spending, investment, risk, goal, synthesize
 
 Rules:
-1. If round >= max_rounds, always synthesize
-2. If question is specific to one domain, prioritize that agent
-3. If agents need to react to each other's findings, continue collaboration
-3. If all key insights gathered, synthesize"""
+1. If round >= max_rounds or all key domains covered, synthesize
+2. Prioritize uncompleted agents: {remaining}
+3. If user question focuses on a domain, evaluate that first"""
 
         user_prompt = system_prompt.format(
             round_num=round_num,
-            max_rounds=state.get("max_rounds", 3),
+            max_rounds=state.get("max_rounds", 4),
             completed=", ".join(completed_agents) if completed_agents else "none",
             remaining=", ".join(remaining) if remaining else "none",
             question=question or "General financial analysis",
@@ -150,15 +164,21 @@ Rules:
 
             valid_agents = ["spending", "investment", "risk", "goal", "synthesize"]
             if next_agent not in valid_agents:
-                next_agent = "spending" if remaining else "synthesize"
+                next_agent = remaining[0] if remaining else "synthesize"
 
         except Exception:
-            next_agent = "spending" if remaining else "synthesize"
+            next_agent = remaining[0] if remaining else "synthesize"
+
+        messages.append(AIMessage(
+            content=f"[SUPERVISOR] Routing decision: next task delegated to {next_agent.upper()}.",
+            name="supervisor"
+        ))
 
         return {
             **state,
             "current_agent": next_agent,
             "needs_collaboration": next_agent != "synthesize",
+            "messages": messages,
         }
 
     def _agent_node(self, state: AgentState, agent_name: str) -> AgentState:
@@ -193,14 +213,11 @@ Rules:
 
     def _route_after_agent(self, state: AgentState) -> Literal["continue", "synthesize"]:
         round_num = state.get("collaboration_round", 0)
-        max_rounds = state.get("max_rounds", 3)
+        max_rounds = state.get("max_rounds", 4)
         agent_outputs = state.get("agent_outputs", {})
 
-        if round_num >= max_rounds:
-            return "synthesize"
-
         completed = len(agent_outputs)
-        if completed >= 4:
+        if completed >= 4 or round_num >= max(4, max_rounds):
             return "synthesize"
 
         return "continue"
@@ -208,7 +225,9 @@ Rules:
     def _synthesize_node(self, state: AgentState) -> AgentState:
         if not self.llm:
             final = self._fallback_synthesis(state)
-            return {**state, "final_answer": final}
+            messages = list(state.get("messages", []))
+            messages.append(AIMessage(content=f"[CONSENSUS SYNTHESIS] {final}", name="supervisor"))
+            return {**state, "final_answer": final, "messages": messages}
 
         profile = state["profile"]
         agent_outputs = state.get("agent_outputs", {})
@@ -264,7 +283,9 @@ Provide a cohesive, actionable financial analysis that:
             final = self._fallback_synthesis(state)
 
         final_cleaned = ensure_inr(final)
-        return {**state, "final_answer": final_cleaned, "messages": state.get("messages", []) + [AIMessage(content=final_cleaned, name="supervisor")]}
+        messages = list(state.get("messages", []))
+        messages.append(AIMessage(content=f"[CONSENSUS SYNTHESIS] {final_cleaned}", name="supervisor"))
+        return {**state, "final_answer": final_cleaned, "messages": messages}
 
     def _fallback_synthesis(self, state: AgentState) -> str:
         agent_outputs = state.get("agent_outputs", {})
@@ -281,7 +302,7 @@ Provide a cohesive, actionable financial analysis that:
         self,
         months: list[FinancialMonth],
         user_question: str | None = None,
-        max_rounds: int = 3,
+        max_rounds: int = 4,
     ) -> dict[str, Any]:
         profile = self.twin_engine.build_profile(months)
         forecast = self.forecasting_engine.simulate(
@@ -311,6 +332,19 @@ Provide a cohesive, actionable financial analysis that:
 
         result = self.graph.invoke(initial_state)
 
+        # Convert LangChain messages to plain JSON-serializable dictionaries
+        serialized_messages = []
+        for msg in result.get("messages", []):
+            if hasattr(msg, "content"):
+                sender = getattr(msg, "name", None) or ("user" if isinstance(msg, HumanMessage) else "agent")
+                serialized_messages.append({
+                    "sender": sender,
+                    "content": ensure_inr(str(msg.content)),
+                    "type": getattr(msg, "type", "ai"),
+                })
+            elif isinstance(msg, dict):
+                serialized_messages.append(msg)
+
         return {
             "profile": profile,
             "agent_outputs": result["agent_outputs"],
@@ -318,7 +352,7 @@ Provide a cohesive, actionable financial analysis that:
             "forecast": forecast,
             "explanation": explanation,
             "collaboration_rounds": result["collaboration_round"],
-            "messages": result["messages"],
+            "messages": serialized_messages,
         }
 
 

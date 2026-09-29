@@ -29,8 +29,8 @@ class FinancialDigitalTwinEngine:
         monthly_income = latest.active_income + latest.passive_income
         monthly_outflow = latest.money_spent + latest.emi_monthly + latest.miscellaneous_charges
         monthly_surplus = monthly_income - monthly_outflow
-        savings_rate = monthly_surplus / max(monthly_income, 1)
-        debt_service_ratio = latest.emi_monthly / max(monthly_income, 1)
+        savings_rate = (monthly_surplus / monthly_income) if monthly_income > 0 else 0
+        debt_service_ratio = (latest.emi_monthly / monthly_income) if monthly_income > 0 else 0
         loan_balance = latest.loans_outstanding
         credit_score = latest.credit_score
         passive_income = latest.passive_income

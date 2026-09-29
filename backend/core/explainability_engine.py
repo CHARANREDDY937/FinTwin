@@ -2,12 +2,20 @@ class ExplainabilityEngine:
     """Produces SHAP/LIME-style feature importance for the forecast."""
 
     def explain(self, profile: dict) -> dict:
-        spend_pressure = profile["monthly_outflow"] / max(profile["monthly_income"], 1)
-        debt_pressure = profile["debt_service_ratio"]
-        credit_pressure = max(0, 1 - (profile["credit_score"] - 300) / 600) if profile["credit_score"] else 0.5
-        passive_support = profile["passive_income"] / max(profile["monthly_income"], 1)
-        inflation_signal = 0.25 + max(0, profile["spending_trend"])
-        loan_exposure = min(1, profile["loan_balance"] / max(profile["monthly_income"] * 8, 1))
+        monthly_income = profile.get("monthly_income", 0)
+        monthly_outflow = profile.get("monthly_outflow", 0)
+        debt_service_ratio = profile.get("debt_service_ratio", 0)
+        credit_score = profile.get("credit_score", 0)
+        passive_income = profile.get("passive_income", 0)
+        spending_trend = profile.get("spending_trend", 0)
+        loan_balance = profile.get("loan_balance", 0)
+
+        spend_pressure = monthly_outflow / max(monthly_income, 1)
+        debt_pressure = debt_service_ratio
+        credit_pressure = max(0, 1 - (credit_score - 300) / 600) if credit_score else 0.5
+        passive_support = passive_income / max(monthly_income, 1)
+        inflation_signal = 0.25 + max(0, spending_trend)
+        loan_exposure = min(1, loan_balance / max(monthly_income * 8, 1))
 
         raw = [
             {"feature": "Monthly spending", "weight": spend_pressure * 0.35 + 0.18},
@@ -24,16 +32,30 @@ class ExplainabilityEngine:
             reverse=True,
         )
 
+        recommendation = self._recommend(profile, feature_importance)
+        top_feature = feature_importance[0]["feature"] if feature_importance else "Monthly spending"
+
+        summary = (
+            f"Top driver: {top_feature} ({feature_importance[0]['importance']:.1%}). "
+            f"{recommendation}"
+        ) if feature_importance else recommendation
+
         return {
             "method": "SHAP/LIME-inspired feature importance",
             "feature_importance": feature_importance,
-            "recommendation": self._recommend(profile, feature_importance),
+            "recommendation": recommendation,
+            "summary": summary,
+            "debt": {
+                "debt_service_ratio": debt_service_ratio,
+                "loan_balance": loan_balance,
+                "pressure": debt_pressure,
+            },
         }
 
     def _recommend(self, profile: dict, feature_importance: list[dict]) -> str:
         top_feature = feature_importance[0]["feature"] if feature_importance else "Monthly spending"
-        if profile["debt_service_ratio"] > 0.3:
+        if profile.get("debt_service_ratio", 0) > 0.3:
             return "Reduce EMI burden before adding new long-term goals."
-        if profile["savings_rate"] < 0.15:
+        if profile.get("savings_rate", 0) < 0.15:
             return f"Improve savings rate by focusing first on {top_feature.lower()}."
         return "The current profile can support moderate long-term planning with continued monthly uploads."

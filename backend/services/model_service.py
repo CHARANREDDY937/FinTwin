@@ -1,5 +1,6 @@
-from __future__ import annotations
-
+import os
+import asyncio
+import concurrent.futures
 from pathlib import Path
 from typing import Optional
 
@@ -11,6 +12,19 @@ try:
     from transformers import pipeline
 except Exception:
     pipeline = None
+
+
+def _run_async(coro, timeout: float = 15.0):
+    """Safely executes an async coroutine from synchronous code whether an event loop is running or not."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            return executor.submit(asyncio.run, coro).result(timeout=timeout)
+    return asyncio.run(coro)
 
 
 class PersonalizedFinanceModelService:
@@ -32,11 +46,13 @@ class PersonalizedFinanceModelService:
     ) -> dict:
         # Try Groq first if API key is available
         if settings.groq_api_key:
-            import asyncio
             try:
-                groq_answer = asyncio.run(groq_service.answer_financial_question(
-                    question, profile, forecast, agent_outputs, explanation
-                ))
+                groq_answer = _run_async(
+                    groq_service.answer_financial_question(
+                        question, profile, forecast, agent_outputs, explanation
+                    ),
+                    timeout=10.0,
+                )
                 if groq_answer:
                     return {
                         "answer": ensure_inr(groq_answer),
@@ -90,6 +106,10 @@ class PersonalizedFinanceModelService:
 
         candidate = Path(settings.personalized_model_dir)
         use_personalized = candidate.exists()
+        if not use_personalized and os.getenv("ENABLE_BASE_MODEL_DOWNLOAD", "0") != "1":
+            # Avoid downloading multi-GB base model over internet on-the-fly
+            return None
+
         model_ref = str(candidate) if use_personalized else settings.base_model_name
 
         try:
